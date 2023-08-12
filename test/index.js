@@ -221,7 +221,7 @@ test('resolves a partial entity from a single subgraph', async (t) => {
 test('resolves an entity across multiple subgraphs', async (t) => {
   const router = await startRouter(t, ['books-subgraph', 'reviews-subgraph']);
 
-  await t.test('query flows from review -> book subgraph', async (t) => {
+  await t.test('query flows from non-owner to owner subgraph', async (t) => {
     const query = `
       query {
         getReviewBook(id: 1) {
@@ -254,7 +254,7 @@ test('resolves an entity across multiple subgraphs', async (t) => {
     });
   });
 
-  await t.test('query flows from book -> review subgraph', async (t) => {
+  await t.test('query flows from owner to non-owner subgraph', async (t) => {
     const query = `
       query {
         getBook(id: 1) {
@@ -274,6 +274,70 @@ test('resolves an entity across multiple subgraphs', async (t) => {
     deepStrictEqual(data, {
       getBook: {
         id: '1',
+        title: 'A Book About Things That Never Happened',
+        genre: 'FICTION',
+        reviews: [
+          {
+            id: '1',
+            rating: 2,
+            content: 'Would not read again.'
+          }
+        ]
+      }
+    });
+  });
+
+  await t.test('fetches foreign key fields not in selection set', async (t) => {
+    const query = `
+      query {
+        getReviewBook(id: 1) {
+          # id not included and it is part of the foreign key.
+          title
+          genre
+          reviews {
+            id
+            rating
+            content
+          }
+        }
+      }
+    `;
+    const data = await gqlRequest(router, query);
+
+    deepStrictEqual(data, {
+      getReviewBook: {
+        title: 'A Book About Things That Never Happened',
+        genre: 'FICTION',
+        reviews: [
+          {
+            id: '1',
+            rating: 2,
+            content: 'Would not read again.'
+          }
+        ]
+      }
+    });
+  });
+
+  await t.test('fetches primary key fields not in selection set', async (t) => {
+    const query = `
+      query {
+        getBook(id: 1) {
+          # id not included and it is part of the primary key.
+          title
+          genre
+          reviews {
+            id
+            rating
+            content
+          }
+        }
+      }
+    `;
+    const data = await gqlRequest(router, query);
+
+    deepStrictEqual(data, {
+      getBook: {
         title: 'A Book About Things That Never Happened',
         genre: 'FICTION',
         reviews: [
