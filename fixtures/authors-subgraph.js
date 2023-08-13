@@ -20,6 +20,10 @@ const schema = `
     get(id: ID!): Author
     list: [Author]
   }
+
+  type Mutation {
+    createAuthor: Author!
+  }
 `;
 const authors = {
   1: {
@@ -49,6 +53,22 @@ const resolvers = {
     },
     async list() {
       return Object.values(authors);
+    }
+  },
+  Mutation: {
+    // TODO(cjihrig): Need to support input objects.
+    async createAuthor() {
+      const id = Object.keys(authors).length + 1;
+      const author = {
+        id,
+        name: {
+          firstName: 'John',
+          lastName: 'Johnson'
+        }
+      };
+
+      authors[id] = author;
+      return author;
     }
   },
   Author: {
