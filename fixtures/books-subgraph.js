@@ -47,9 +47,6 @@ const entities = {
     referenceListResolverName: 'getBooksByIds',
     primaryKeyFields: ['id'],
     adapter(partialResult) {
-      // TODO(cjihrig): Throw if the partial result does not have the primary
-      // key fields. We can probably automate fetching foreign key fields from
-      // the initial query.
       return {
         id: partialResult.id
       };

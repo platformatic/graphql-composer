@@ -351,3 +351,24 @@ test('resolves an entity across multiple subgraphs', async (t) => {
     });
   });
 });
+
+test('Mutations', async () => {
+  await test('simple mutation', async (t) => {
+    const router = await startRouter(t, ['authors-subgraph']);
+    const query = `
+      mutation {
+        createAuthor {
+          id name { firstName lastName }
+        }
+      }
+    `;
+    const data = await gqlRequest(router, query);
+
+    deepStrictEqual(data, {
+      createAuthor: {
+        id: '2',
+        name: { firstName: 'John', lastName: 'Johnson' }
+      }
+    });
+  });
+});
