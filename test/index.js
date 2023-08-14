@@ -372,4 +372,24 @@ test('Mutations', async () => {
       }
     });
   });
+
+  await test('simple mutation with input object literal', async (t) => {
+    const router = await startRouter(t, ['authors-subgraph']);
+    const query = `
+      mutation {
+        createAuthor(author: { firstName: "Tuco", lastName: "Gustavo" }) {
+          id name { firstName lastName }
+        }
+      }
+    `;
+    const data = await gqlRequest(router, query);
+
+    deepStrictEqual(data, {
+      // TODO(cjihrig): Update tests to wipe data between each test.
+      createAuthor: {
+        id: '3',
+        name: { firstName: 'Tuco', lastName: 'Gustavo' }
+      }
+    });
+  });
 });
