@@ -1,6 +1,11 @@
 'use strict';
 
 const schema = `
+  input AuthorInput {
+    firstName: String!
+    lastName: String!
+  }
+
   type AuthorTodo {
     task: String
   }
@@ -22,7 +27,7 @@ const schema = `
   }
 
   type Mutation {
-    createAuthor: Author!
+    createAuthor(author: AuthorInput!): Author!
   }
 `;
 const authors = {
@@ -56,15 +61,11 @@ const resolvers = {
     }
   },
   Mutation: {
-    // TODO(cjihrig): Need to support input objects.
-    async createAuthor() {
+    async createAuthor(_, { author: authorInput }) {
       const id = Object.keys(authors).length + 1;
       const author = {
         id,
-        name: {
-          firstName: 'John',
-          lastName: 'Johnson'
-        }
+        name: { ...authorInput }
       };
 
       authors[id] = author;
