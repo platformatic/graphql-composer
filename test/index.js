@@ -356,13 +356,14 @@ test('Mutations', async () => {
   await test('simple mutation', async (t) => {
     const router = await startRouter(t, ['authors-subgraph']);
     const query = `
-      mutation {
-        createAuthor {
+      mutation CreateAuthor($author: AuthorInput!) {
+        createAuthor(author: $author) {
           id name { firstName lastName }
         }
       }
     `;
-    const data = await gqlRequest(router, query);
+    const author = { firstName: 'John', lastName: 'Johnson' };
+    const data = await gqlRequest(router, query, { author });
 
     deepStrictEqual(data, {
       createAuthor: {
