@@ -6,7 +6,8 @@
   "main": "lib/index.js",
   "author": "Colin J. Ihrig <cjihrig@gmail.com> (http://www.cjihrig.com/)",
   "scripts": {
-    "test": "node --test"
+    "test": "npm run lint && node --test",
+    "lint": "standard | snazzy"
   },
   "dependencies": {
     "graphql": "^16.8.0",
@@ -14,6 +15,8 @@
   },
   "devDependencies": {
     "fastify": "^4.20.0",
-    "mercurius": "^13.1.0"
+    "mercurius": "^13.1.0",
+    "snazzy": "^9.0.0",
+    "standard": "^17.1.0"
   }
 }
