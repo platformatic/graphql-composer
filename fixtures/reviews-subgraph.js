@@ -1,4 +1,4 @@
-'use strict';
+'use strict'
 const schema = `
   type Review {
     id: ID!
@@ -17,71 +17,71 @@ const schema = `
     getReviewBookByIds(ids: [ID]!): [Book]!
     getReviewsByBookId(id: ID!): [Review]!
   }
-`;
-let reviews;
-let books;
+`
+let reviews
+let books
 
-function reset() {
+function reset () {
   reviews = {
     1: {
       id: 1,
       rating: 2,
       content: 'Would not read again.'
     }
-  };
+  }
 
   books = {
     1: {
       id: 1,
       reviews: [1]
     }
-  };
+  }
 }
 
-reset();
+reset()
 
 const resolvers = {
   Query: {
-    async getReview(_, { id }) {
-      return reviews[id];
+    async getReview (_, { id }) {
+      return reviews[id]
     },
-    async getReviewBook(_, { id }) {
-      const book = structuredClone(books[id]);
+    async getReviewBook (_, { id }) {
+      const book = structuredClone(books[id])
 
       book.reviews = book.reviews.map((rid) => {
-        return reviews[rid];
-      });
+        return reviews[rid]
+      })
 
-      return book;
+      return book
     },
-    async getReviewsByBookId(_, { id }) {
+    async getReviewsByBookId (_, { id }) {
       return books[id].reviews.map((rid) => {
-        return reviews[rid];
-      });
+        return reviews[rid]
+      })
     },
-    async getReviewBookByIds(_, { ids }) {
+    async getReviewBookByIds (_, { ids }) {
       return ids.map((id) => {
-        const book = structuredClone(books[id]);
+        const book = structuredClone(books[id])
 
         book.reviews = book.reviews.map((rid) => {
-          return reviews[rid];
-        });
+          return reviews[rid]
+        })
 
-        return book;
-      });
+        return book
+      })
     }
   }
-};
+}
 const entities = {
   Book: {
     referenceListResolverName: 'getReviewBookByIds',
     foreignKeyFields: ['id'],
-    adapter(partialResult) {
+    adapter (partialResult) {
       return {
         ids: [partialResult.id]
-      };
+      }
     }
   }
-};
+}
 
-module.exports = { entities, reset, resolvers, schema };
+module.exports = { entities, reset, resolvers, schema }

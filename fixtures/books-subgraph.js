@@ -1,4 +1,4 @@
-'use strict';
+'use strict'
 const schema = `
   enum BookGenre {
     FICTION
@@ -16,10 +16,10 @@ const schema = `
     getBookTitle(id: ID!): String
     getBooksByIds(id: [ID]!): [Book]!
   }
-`;
-let library;
+`
+let library
 
-function reset() {
+function reset () {
   library = {
     1: {
       id: 1,
@@ -31,35 +31,34 @@ function reset() {
       title: 'A Book About Things That Really Happened',
       genre: 'NONFICTION'
     }
-  };
+  }
 }
 
-reset();
+reset()
 
 const resolvers = {
   Query: {
-    async getBook(_, { id }) {
-      return library[id];
+    async getBook (_, { id }) {
+      return library[id]
     },
-    async getBookTitle(_, { id }) {
-      return library[id]?.title;
+    async getBookTitle (_, { id }) {
+      return library[id]?.title
     },
-    async getBooksByIds(_, { id }) {
-      return id.map((id) => { return library[id]; });
+    async getBooksByIds (_, { id }) {
+      return id.map((id) => { return library[id] })
     }
   }
-};
+}
 const entities = {
   Book: {
     referenceListResolverName: 'getBooksByIds',
     primaryKeyFields: ['id'],
-    adapter(partialResult) {
+    adapter (partialResult) {
       return {
         id: partialResult.id
-      };
+      }
     }
   }
-};
+}
 
-module.exports = { entities, reset, resolvers, schema };
-
+module.exports = { entities, reset, resolvers, schema }

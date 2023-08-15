@@ -1,16 +1,16 @@
-'use strict';
-const { walkSchema } = require('./visitor');
-const { startRouter } = require('./test/helper');
+'use strict'
+// const { walkSchema } = require('./visitor')
+const { startRouter } = require('./test/helper')
 
-async function main() {
-  const fakeTestContext = { after() {} };
+async function main () {
+  const fakeTestContext = { after () {} }
   const server = await startRouter(fakeTestContext, [
     'authors-subgraph',
     'books-subgraph',
     'reviews-subgraph'
-  ]);
+  ])
 
-  server.get('/', async function(req, reply) {
+  server.get('/', async function (req, reply) {
     try {
       const query = `
         query GetBookById($id: ID!) {
@@ -25,56 +25,57 @@ async function main() {
             }
           }
         }
-      `;
-      return reply.graphql(query, null, { id: 1 });
+      `
+      return reply.graphql(query, null, { id: 1 })
     } catch (err) {
-      console.log(err);
+      console.log(err)
     }
-  });
+  })
 
-  server.listen({ port: 4000 });
+  server.listen({ port: 4000 })
 }
 
-main();
+main()
 
-function renameType(schema, from, to) {
-  const visitor = {
-    schema(node) {
+// Comment out for the linter. Uncomment later.
+// function renameType (schema, from, to) {
+//   const visitor = {
+//     schema (node) {
 
-    },
-    queryType(node) {
-      if (node.name === from) {
-        node.name = to;
-      }
-    },
-    mutationType(node) {
-      if (node.name === from) {
-        node.name = to;
-      }
-    },
-    subscriptionType(node) {
-      if (node.name === from) {
-        node.name = to;
-      }
-    },
-    type(node) {
-      if (node.name === from) {
-        node.name = to;
-      }
+//     },
+//     queryType (node) {
+//       if (node.name === from) {
+//         node.name = to;
+//       }
+//     },
+//     mutationType (node) {
+//       if (node.name === from) {
+//         node.name = to;
+//       }
+//     },
+//     subscriptionType (node) {
+//       if (node.name === from) {
+//         node.name = to;
+//       }
+//     },
+//     type (node) {
+//       if (node.name === from) {
+//         node.name = to;
+//       }
 
-      console.log('visited type');
-      console.log(node);
-    },
-    directive(node) {
-      // console.log('visited directive');
-    },
-    field(node) {
-      // console.log('visited field');
-    },
-    argument(node) {
+//       console.log('visited type');
+//       console.log(node);
+//     },
+//     directive (node) {
+//       // console.log('visited directive');
+//     },
+//     field (node) {
+//       // console.log('visited field');
+//     },
+//     argument (node) {
 
-    },
-  };
+//     }
+//   };
 
-  walkSchema(schema, visitor);
-}
+//   walkSchema(schema, visitor);
+// }

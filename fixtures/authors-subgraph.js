@@ -1,4 +1,4 @@
-'use strict';
+'use strict'
 
 const schema = `
   input AuthorInput {
@@ -29,12 +29,12 @@ const schema = `
   type Mutation {
     createAuthor(author: AuthorInput!): Author!
   }
-`;
+`
 
-let authors;
-let todos;
+let authors
+let todos
 
-function reset() {
+function reset () {
   authors = {
     1: {
       id: 1,
@@ -43,7 +43,7 @@ function reset() {
         lastName: 'Pluck'
       }
     }
-  };
+  }
 
   todos = {
     1: {
@@ -56,39 +56,39 @@ function reset() {
       authorId: 1,
       task: 'Get really creative'
     }
-  };
+  }
 }
 
-reset();
+reset()
 
 const resolvers = {
   Query: {
-    async get(_, { id }) {
-      return authors[id];
+    async get (_, { id }) {
+      return authors[id]
     },
-    async list() {
-      return Object.values(authors);
+    async list () {
+      return Object.values(authors)
     }
   },
   Mutation: {
-    async createAuthor(_, { author: authorInput }) {
-      const id = Object.keys(authors).length + 1;
+    async createAuthor (_, { author: authorInput }) {
+      const id = Object.keys(authors).length + 1
       const author = {
         id,
         name: { ...authorInput }
-      };
+      }
 
-      authors[id] = author;
-      return author;
+      authors[id] = author
+      return author
     }
   },
   Author: {
-    async todos(_, { id }) {
+    async todos (_, { id }) {
       return Object.values(todos).filter((t) => {
-        return String(t.id) === id;
-      });
+        return String(t.id) === id
+      })
     }
   }
-};
+}
 
-module.exports = { schema, reset, resolvers };
+module.exports = { schema, reset, resolvers }
