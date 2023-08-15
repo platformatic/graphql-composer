@@ -9,10 +9,11 @@
     "test": "node --test"
   },
   "dependencies": {
-    "fastify": "^4.20.0",
-    "graphql": "^16.7.1",
-    "mercurius": "^13.1.0",
+    "graphql": "^16.8.0",
     "undici": "^5.22.1"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "fastify": "^4.20.0",
+    "mercurius": "^13.1.0"
+  }
 }
