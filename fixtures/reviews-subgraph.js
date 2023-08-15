@@ -18,19 +18,28 @@ const schema = `
     getReviewsByBookId(id: ID!): [Review]!
   }
 `;
-const reviews = {
-  1: {
-    id: 1,
-    rating: 2,
-    content: 'Would not read again.'
-  }
-};
-const books = {
-  1: {
-    id: 1,
-    reviews: [1]
-  }
-};
+let reviews;
+let books;
+
+function reset() {
+  reviews = {
+    1: {
+      id: 1,
+      rating: 2,
+      content: 'Would not read again.'
+    }
+  };
+
+  books = {
+    1: {
+      id: 1,
+      reviews: [1]
+    }
+  };
+}
+
+reset();
+
 const resolvers = {
   Query: {
     async getReview(_, { id }) {
@@ -75,4 +84,4 @@ const entities = {
   }
 };
 
-module.exports = { entities, resolvers, schema };
+module.exports = { entities, reset, resolvers, schema };

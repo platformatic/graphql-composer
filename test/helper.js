@@ -11,6 +11,7 @@ async function startRouter(t, subgraphs) {
   const promises = subgraphs.map(async (subgraph) => {
     const {
       entities,
+      reset,
       resolvers,
       schema
     } = require(join(fixturesDir, subgraph));
@@ -22,6 +23,7 @@ async function startRouter(t, subgraphs) {
       } catch {}  // Ignore errors.
     });
 
+    reset();
     server.register(Mercurius, { schema, resolvers });
     server.get('/.well-known/gql-composition', async function(req, reply) {
       const introspectionQuery = getIntrospectionQuery();
