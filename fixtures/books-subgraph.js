@@ -17,18 +17,25 @@ const schema = `
     getBooksByIds(id: [ID]!): [Book]!
   }
 `;
-const library = {
-  1: {
-    id: 1,
-    title: 'A Book About Things That Never Happened',
-    genre: 'FICTION'
-  },
-  2: {
-    id: 2,
-    title: 'A Book About Things That Really Happened',
-    genre: 'NONFICTION'
-  }
-};
+let library;
+
+function reset() {
+  library = {
+    1: {
+      id: 1,
+      title: 'A Book About Things That Never Happened',
+      genre: 'FICTION'
+    },
+    2: {
+      id: 2,
+      title: 'A Book About Things That Really Happened',
+      genre: 'NONFICTION'
+    }
+  };
+}
+
+reset();
+
 const resolvers = {
   Query: {
     async getBook(_, { id }) {
@@ -54,5 +61,5 @@ const entities = {
   }
 };
 
-module.exports = { entities, resolvers, schema };
+module.exports = { entities, reset, resolvers, schema };
 

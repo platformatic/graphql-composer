@@ -385,9 +385,8 @@ test('Mutations', async () => {
     const data = await gqlRequest(router, query);
 
     deepStrictEqual(data, {
-      // TODO(cjihrig): Update tests to wipe data between each test.
       createAuthor: {
-        id: '3',
+        id: '2',
         name: { firstName: 'Tuco', lastName: 'Gustavo' }
       }
     });

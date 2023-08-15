@@ -30,27 +30,37 @@ const schema = `
     createAuthor(author: AuthorInput!): Author!
   }
 `;
-const authors = {
-  1: {
-    id: 1,
-    name: {
-      firstName: 'Peter',
-      lastName: 'Pluck'
+
+let authors;
+let todos;
+
+function reset() {
+  authors = {
+    1: {
+      id: 1,
+      name: {
+        firstName: 'Peter',
+        lastName: 'Pluck'
+      }
     }
-  }
-};
-const todos = {
-  1: {
-    id: 1,
-    authorId: 1,
-    task: 'Write another book'
-  },
-  2: {
-    id: 2,
-    authorId: 1,
-    task: 'Get really creative'
-  }
-};
+  };
+
+  todos = {
+    1: {
+      id: 1,
+      authorId: 1,
+      task: 'Write another book'
+    },
+    2: {
+      id: 2,
+      authorId: 1,
+      task: 'Get really creative'
+    }
+  };
+}
+
+reset();
+
 const resolvers = {
   Query: {
     async get(_, { id }) {
@@ -81,4 +91,4 @@ const resolvers = {
   }
 };
 
-module.exports = { schema, resolvers };
+module.exports = { schema, reset, resolvers };
