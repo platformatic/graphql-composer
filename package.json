@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "graphql": "^16.8.0",
-    "undici": "^5.22.1"
+    "undici": "^5.22.1",
+    "ws": "^8.13.0"
   },
   "devDependencies": {
     "fastify": "^4.20.0",

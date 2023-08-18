@@ -24,7 +24,7 @@ async function startRouter (t, subgraphs) {
     })
 
     reset()
-    server.register(Mercurius, { schema, resolvers })
+    server.register(Mercurius, { schema, resolvers, subscription: true })
     server.get('/.well-known/gql-composition', async function (req, reply) {
       const introspectionQuery = getIntrospectionQuery()
 
@@ -44,14 +44,26 @@ async function startRouter (t, subgraphs) {
   })
   const subgraphConfigs = await Promise.all(promises)
   const routerConfig = {
-    subgraphs: subgraphConfigs
+    subgraphs: subgraphConfigs,
+    subscriptions: {
+      publish (ctx, topic, payload) {
+        ctx.pubsub.publish({
+          topic,
+          payload
+        })
+      },
+      subscribe (ctx, topic) {
+        return ctx.pubsub.subscribe(topic)
+      }
+    }
   }
   const composer = await compose(routerConfig)
   const router = Fastify()
 
   router.register(Mercurius, {
     schema: buildClientSchema(composer.toSchema()),
-    resolvers: composer.resolvers
+    resolvers: composer.resolvers,
+    subscription: true
   })
 
   return router
