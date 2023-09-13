@@ -43,19 +43,23 @@ async function startRouter (t, subgraphs) {
     }
   })
   const subgraphConfigs = await Promise.all(promises)
+  const subscriptionRecorder = []
   const routerConfig = {
     subgraphs: subgraphConfigs,
     subscriptions: {
       publish (ctx, topic, payload) {
+        subscriptionRecorder.push({ action: 'publish', topic, payload })
         ctx.pubsub.publish({
           topic,
           payload
         })
       },
       subscribe (ctx, topic) {
+        subscriptionRecorder.push({ action: 'subscribe', topic })
         return ctx.pubsub.subscribe(topic)
       },
       unsubscribe (ctx, topic) {
+        subscriptionRecorder.push({ action: 'unsubscribe', topic })
         ctx.pubsub.close()
       }
     }
@@ -71,7 +75,7 @@ async function startRouter (t, subgraphs) {
 
   await router.ready()
   router.graphql.addHook('onSubscriptionEnd', composer.onSubscriptionEnd)
-
+  router._subscriptionRecorder = subscriptionRecorder
   return router
 }
 
