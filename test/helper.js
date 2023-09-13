@@ -54,6 +54,9 @@ async function startRouter (t, subgraphs) {
       },
       subscribe (ctx, topic) {
         return ctx.pubsub.subscribe(topic)
+      },
+      unsubscribe (ctx, topic) {
+        ctx.pubsub.close()
       }
     }
   }
@@ -65,6 +68,9 @@ async function startRouter (t, subgraphs) {
     resolvers: composer.resolvers,
     subscription: true
   })
+
+  await router.ready()
+  router.graphql.addHook('onSubscriptionEnd', composer.onSubscriptionEnd)
 
   return router
 }
