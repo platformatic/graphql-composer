@@ -21,6 +21,10 @@ const schema = `
     todos(id: ID!): [AuthorTodo]
   }
 
+  type BlogPostPublishEvent {
+    authorId: ID!
+  }
+
   type Query {
     get(id: ID!): Author
     list: [Author]
@@ -28,6 +32,11 @@ const schema = `
 
   type Mutation {
     createAuthor(author: AuthorInput!): Author!
+    publishBlogPost(authorId: ID!): Boolean!
+  }
+
+  type Subscription {
+    postPublished: BlogPostPublishEvent
   }
 `
 
@@ -80,6 +89,26 @@ const resolvers = {
 
       authors[id] = author
       return author
+    },
+
+    async publishBlogPost (_, { authorId }, context) {
+      context.app.graphql.pubsub.publish({
+        topic: 'PUBLISH_BLOG_POST',
+        payload: {
+          postPublished: {
+            authorId
+          }
+        }
+      })
+
+      return true
+    }
+  },
+  Subscription: {
+    postPublished: {
+      subscribe: (root, args, ctx) => {
+        return ctx.pubsub.subscribe('PUBLISH_BLOG_POST')
+      }
     }
   },
   Author: {
