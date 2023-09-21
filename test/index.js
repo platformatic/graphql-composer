@@ -352,6 +352,26 @@ test('resolves an entity across multiple subgraphs', async (t) => {
   })
 })
 
+test('multiple queries in a single request', async (t) => {
+  const router = await startRouter(t, ['authors-subgraph', 'books-subgraph'])
+  const query = `
+    query {
+      getBook(id: 2) {
+        id genre
+      }
+      list {
+        id name { firstName lastName }
+      }
+    }
+  `
+  const data = await gqlRequest(router, query)
+
+  deepStrictEqual(data, {
+    getBook: { id: '2', genre: 'NONFICTION' },
+    list: [{ id: '1', name: { firstName: 'Peter', lastName: 'Pluck' } }]
+  })
+})
+
 test('Mutations', async () => {
   await test('simple mutation', async (t) => {
     const router = await startRouter(t, ['authors-subgraph'])
