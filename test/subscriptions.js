@@ -79,3 +79,74 @@ test('simple subscription', async (t) => {
     { action: 'unsubscribe', topic: '1' }
   ])
 })
+
+test('subscription with followup queries', async (t) => {
+  const router = await startRouter(t, ['books-subgraph', 'reviews-subgraph'])
+
+  t.after(() => {
+    router.close()
+  })
+
+  await router.listen()
+  const wsUrl = `ws://localhost:${router.server.address().port}/graphql`
+  const client = new SubscriptionClient(wsUrl, { serviceName: 'test' })
+
+  t.after(() => {
+    try {
+      client.unsubscribeAll()
+      client.close()
+    } catch {} // Ignore any errors. The client should already be closed.
+  })
+
+  client.connect()
+  await once(client, 'ready')
+  client.createSubscription(`
+    subscription {
+      reviewPosted {
+        id rating content book { id title genre reviews { id rating content } }
+      }
+    }
+  `, {}, (data) => {
+    client.emit('message', data.payload)
+  })
+  await sleep(200) // Make sure the subscription has finished setting up.
+  const mutation = await gqlRequest(router, `
+    mutation {
+      createReview(review: { bookId: "1", rating: 10, content: "Not sure" }) {
+        id rating content
+      }
+    }
+  `)
+  assert.deepStrictEqual(mutation, {
+    createReview: {
+      id: '2',
+      rating: 10,
+      content: 'Not sure'
+    }
+  })
+  const [message] = await once(client, 'message')
+  assert.deepStrictEqual(message, {
+    reviewPosted: {
+      id: '2',
+      rating: 10,
+      content: 'Not sure',
+      book: {
+        id: '1',
+        genre: 'FICTION',
+        title: 'A Book About Things That Never Happened',
+        reviews: [
+          {
+            id: '1',
+            rating: 2,
+            content: 'Would not read again.'
+          },
+          {
+            id: '2',
+            rating: 10,
+            content: 'Not sure'
+          }
+        ]
+      }
+    }
+  })
+})
