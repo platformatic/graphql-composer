@@ -47,6 +47,9 @@ async function startRouter (t, subgraphs) {
   const routerConfig = {
     subgraphs: subgraphConfigs,
     subscriptions: {
+      onError (ctx, topic, error) {
+        subscriptionRecorder.push({ action: 'error', topic, error })
+      },
       publish (ctx, topic, payload) {
         subscriptionRecorder.push({ action: 'publish', topic, payload })
         ctx.pubsub.publish({
