@@ -150,3 +150,62 @@ test('subscription with followup queries', async (t) => {
     }
   })
 })
+
+test('subscription errors are propagated', async (t) => {
+  const overrides = {
+    subscriptions: {
+      onError (ctx, topic, error) {
+        client.emit('subscriptionError', error)
+      },
+      publish (ctx, topic, payload) {
+        throw new Error('boom')
+      }
+    }
+  }
+  const subgraphs = ['books-subgraph', 'reviews-subgraph']
+  const router = await startRouter(t, subgraphs, overrides)
+
+  t.after(() => {
+    router.close()
+  })
+
+  await router.listen()
+  const wsUrl = `ws://localhost:${router.server.address().port}/graphql`
+  const client = new SubscriptionClient(wsUrl, { serviceName: 'test' })
+
+  t.after(() => {
+    try {
+      client.unsubscribeAll()
+      client.close()
+    } catch {} // Ignore any errors. The client should already be closed.
+  })
+
+  client.connect()
+  await once(client, 'ready')
+  client.createSubscription(`
+    subscription {
+      reviewPosted {
+        id rating content book { id title genre reviews { id rating content } }
+      }
+    }
+  `, {}, (data) => {
+    client.emit('message', data.payload)
+  })
+  await sleep(200) // Make sure the subscription has finished setting up.
+  const mutation = await gqlRequest(router, `
+    mutation {
+      createReview(review: { bookId: "1", rating: 10, content: "Not sure" }) {
+        id rating content
+      }
+    }
+  `)
+  assert.deepStrictEqual(mutation, {
+    createReview: {
+      id: '2',
+      rating: 10,
+      content: 'Not sure'
+    }
+  })
+  const [error] = await once(client, 'subscriptionError')
+  assert.strictEqual(error.message, 'boom')
+})

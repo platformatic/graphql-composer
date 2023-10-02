@@ -7,7 +7,7 @@ const Mercurius = require('mercurius')
 const { compose } = require('../lib')
 const fixturesDir = join(__dirname, '..', 'fixtures')
 
-async function startRouter (t, subgraphs) {
+async function startRouter (t, subgraphs, overrides = {}) {
   const promises = subgraphs.map(async (subgraph) => {
     const {
       entities,
@@ -44,28 +44,29 @@ async function startRouter (t, subgraphs) {
   })
   const subgraphConfigs = await Promise.all(promises)
   const subscriptionRecorder = []
+  const defaultSubscriptionHandler = {
+    onError (ctx, topic, error) {
+      subscriptionRecorder.push({ action: 'error', topic, error })
+    },
+    publish (ctx, topic, payload) {
+      subscriptionRecorder.push({ action: 'publish', topic, payload })
+      ctx.pubsub.publish({
+        topic,
+        payload
+      })
+    },
+    subscribe (ctx, topic) {
+      subscriptionRecorder.push({ action: 'subscribe', topic })
+      return ctx.pubsub.subscribe(topic)
+    },
+    unsubscribe (ctx, topic) {
+      subscriptionRecorder.push({ action: 'unsubscribe', topic })
+      ctx.pubsub.close()
+    }
+  }
   const routerConfig = {
     subgraphs: subgraphConfigs,
-    subscriptions: {
-      onError (ctx, topic, error) {
-        subscriptionRecorder.push({ action: 'error', topic, error })
-      },
-      publish (ctx, topic, payload) {
-        subscriptionRecorder.push({ action: 'publish', topic, payload })
-        ctx.pubsub.publish({
-          topic,
-          payload
-        })
-      },
-      subscribe (ctx, topic) {
-        subscriptionRecorder.push({ action: 'subscribe', topic })
-        return ctx.pubsub.subscribe(topic)
-      },
-      unsubscribe (ctx, topic) {
-        subscriptionRecorder.push({ action: 'unsubscribe', topic })
-        ctx.pubsub.close()
-      }
-    }
+    subscriptions: { ...defaultSubscriptionHandler, ...overrides.subscriptions }
   }
   const composer = await compose(routerConfig)
   const router = Fastify()
