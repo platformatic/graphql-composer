@@ -175,8 +175,8 @@ main()
       - `subgraphs` (array, optional) - Array of subgraph configuration objects with the following schema.
         - `server` (object, required) - Configuration object for communicating with the subgraph server with the following schema:
           - `host` (string, required) - The host information to connect to.
-          - `composeEndpoint` (string, optional) - The endpoint to retrieve the introspection query from. **Default:** `'/.well-known/graphql-composition'`
-          - `graphqlEndpoint` (string, optional) - The endpoint to make GraphQL queries against. **Default:** `'/graphql'`
+          - `composeEndpoint` (string, optional) - The endpoint to retrieve the introspection query from. **Default:** `'/.well-known/graphql-composition'`.
+          - `graphqlEndpoint` (string, optional) - The endpoint to make GraphQL queries against. **Default:** `'/graphql'`.
         - `entities` (object, optional) - Configuration object for working with entities in this subgraph. Each key in this object is the name of an entity data type. This is required if the subgraph contains any entities. The values are objects with the the following schema:
           - `adapter(partialResult)` (function, required) - When resolving an entity across multiple subgraphs, an initial query is made to one subgraph followed by one or more followup queries to other subgraphs. The initial query must return enough information to identify the corresponding data in the other subgraphs. This function is invoked with the result of the initial query. It should return an object whose keys correspond to the `primaryKeyFields` configuration.
           - `primaryKeyFields` (array of strings, required) - The fields used to uniquely identify objects of this type.
@@ -196,6 +196,9 @@ main()
         - `unsubscribe(ctx, topic)` (function, required) - Hook called to unsubscribe from a topic. The arguments are:
           - `ctx` (any) - GraphQL context object.
           - `topic` (string) - The subscription topic.
+      - `queryTypeName` (string, optional) - The name of the `Query` type in the composed schema. **Default:** `'Query'`.
+      - `mutationTypeName` (string, optional) - The name of the `Mutation` type in the composed schema. **Default:** `'Mutation'`.
+      - `subscriptionTypeName` (string, optional) - The name of the `Subscription` type in the composed schema. **Default:** `'Subscription'`.
   - Returns
     - A `Promise` that resolves with a `Composer` instance.
 
