@@ -192,7 +192,7 @@ test('subscription errors are propagated', async (t) => {
     client.emit('message', data.payload)
   })
   await sleep(200) // Make sure the subscription has finished setting up.
-  const mutation = await gqlRequest(router, `
+  const mutation = await graphqlRequest(router, `
     mutation {
       createReview(review: { bookId: "1", rating: 10, content: "Not sure" }) {
         id rating content
