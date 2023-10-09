@@ -1,5 +1,5 @@
 {
-  "name": "@platformatic/gql-composer",
+  "name": "@platformatic/graphql-composer",
   "version": "0.1.0",
   "description": "GraphQL API Composer",
   "license": "Apache 2.0",

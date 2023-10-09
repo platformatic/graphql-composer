@@ -1,4 +1,4 @@
-# `@platformatic/gql-composer`
+# `@platformatic/graphql-composer`
 
 The GraphQL API Composer is a framework agnostic library for combining multiple GraphQL APIs, known as subgraphs, into a single API capable of querying data across any of its constituent subgraphs.
 
@@ -87,7 +87,7 @@ The following example shows how the GraphQL API Composer can be used with Fastif
 
 ```js
 'use strict';
-const { compose } = require('@platformatic/gql-composer')
+const { compose } = require('@platformatic/graphql-composer')
 const Fastify = require('fastify')
 const { buildClientSchema } = require('graphql')
 const Mercurius = require('mercurius')
@@ -100,9 +100,9 @@ async function main() {
         server: {
           host: 'localhost:3000',
           // Endpoint for retrieving introspection schema.
-          composeEndpoint: '/gql-composition',
+          composeEndpoint: '/graphql-composition',
           // Endpoint for GraphQL queries.
-          gqlEndpoint: '/graphql'
+          graphqlEndpoint: '/graphql'
         },
         entities: {
           // Configuration for working with Book entities in this subgraph.
@@ -172,7 +172,7 @@ main()
         - `server` (object) - Configuration object for communicating with the subgraph server with the following schema:
           - `host` (string) - The host information to connect to.
           - `composeEndpoint` (string) - The endpoint to retrieve the introspection query from.
-          - `gqlEndpoint` (string) - The endpoint to make GraphQL queries against.
+          - `graphqlEndpoint` (string) - The endpoint to make GraphQL queries against.
         - `entities` (object) - Configuration object for working with entities in this subgraph. Each key in this object is the name of an entity data type. The values are objects with the the following schema:
           - `adapter(partialResult)` (function) - A function that maps a partial response into an object including the primary key fields.
           - `primaryKeyFields` (array of strings) - The fields used to uniquely identify objects of this type.

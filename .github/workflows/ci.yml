@@ -1,4 +1,4 @@
-name: gql-composer CI
+name: graphql-composer CI
 
 on:
   push:
