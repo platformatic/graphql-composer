@@ -149,12 +149,16 @@ async function main() {
   const router = Fastify()
 
   router.register(Mercurius, {
+    // buildClientSchema() is used here to create a GraphQL SDL string.
     schema: buildClientSchema(composer.toSchema()),
     resolvers: composer.resolvers,
     subscription: true
   })
 
   await router.ready()
+  // If subscriptions are used, the GraphQL router's server implementation
+  // should call onSubscriptionEnd() when a subscription ends. This tells
+  // the composer to clean up the resources associated with the subscription.
   router.graphql.addHook('onSubscriptionEnd', composer.onSubscriptionEnd)
   await router.listen()
 }
@@ -167,29 +171,29 @@ main()
 ### `compose(config)`
 
   - Arguments
-    - `config` (object) - A configuration object with the following schema.
-      - `subgraphs` (array) - Array of subgraph configuration objects with the following schema.
-        - `server` (object) - Configuration object for communicating with the subgraph server with the following schema:
-          - `host` (string) - The host information to connect to.
-          - `composeEndpoint` (string) - The endpoint to retrieve the introspection query from.
-          - `graphqlEndpoint` (string) - The endpoint to make GraphQL queries against.
-        - `entities` (object) - Configuration object for working with entities in this subgraph. Each key in this object is the name of an entity data type. The values are objects with the the following schema:
-          - `adapter(partialResult)` (function) - A function that maps a partial response into an object including the primary key fields.
-          - `primaryKeyFields` (array of strings) - The fields used to uniquely identify objects of this type.
-          - `referenceListResolverName` (string) - The name of a resolver used to retrieve a list of objects by their primary keys.
-      - `subscriptions` (object) - Subscription hooks with the following schema.
-        - `onError(ctx, topic, error)` (function) - Hook called when a subscription error occurs. The arguments are:
+    - `config` (object, optional) - A configuration object with the following schema.
+      - `subgraphs` (array, optional) - Array of subgraph configuration objects with the following schema.
+        - `server` (object, required) - Configuration object for communicating with the subgraph server with the following schema:
+          - `host` (string, required) - The host information to connect to.
+          - `composeEndpoint` (string, optional) - The endpoint to retrieve the introspection query from. **Default:** `'/.well-known/graphql-composition'`
+          - `graphqlEndpoint` (string, optional) - The endpoint to make GraphQL queries against. **Default:** `'/graphql'`
+        - `entities` (object, optional) - Configuration object for working with entities in this subgraph. Each key in this object is the name of an entity data type. This is required if the subgraph contains any entities. The values are objects with the the following schema:
+          - `adapter(partialResult)` (function, required) - When resolving an entity across multiple subgraphs, an initial query is made to one subgraph followed by one or more followup queries to other subgraphs. The initial query must return enough information to identify the corresponding data in the other subgraphs. This function is invoked with the result of the initial query. It should return an object whose keys correspond to the `primaryKeyFields` configuration.
+          - `primaryKeyFields` (array of strings, required) - The fields used to uniquely identify objects of this type.
+          - `referenceListResolverName` (string, required) - The name of a resolver used to retrieve a list of objects by their primary keys.
+      - `subscriptions` (object, optional) - Subscription hooks. This is required if subscriptions are used. This object adheres to the following schema.
+        - `onError(ctx, topic, error)` (function, required) - Hook called when a subscription error occurs. The arguments are:
           - `ctx` (any) - GraphQL context object.
           - `topic` (string) - The subscription topic.
           - `error` (error) - The subscription error.
-        - `publish(ctx, topic, payload)` (function) - Hook called to publish new data to a topic. The arguments are:
+        - `publish(ctx, topic, payload)` (function, required) - Hook called to publish new data to a topic. The arguments are:
           - `ctx` (any) - GraphQL context object.
           - `topic` (string) - The subscription topic.
           - `payload` (object) - The subscriptiondata to publish.
-        - `subscribe(ctx, topic)` (function) - Hook called to subscribe to a topic. The arguments are:
+        - `subscribe(ctx, topic)` (function, required) - Hook called to subscribe to a topic. The arguments are:
           - `ctx` (any) - GraphQL context object.
           - `topic` (string) - The subscription topic.
-        - `unsubscribe(ctx, topic)` (function) - Hook called to unsubscribe from a topic. The arguments are:
+        - `unsubscribe(ctx, topic)` (function, required) - Hook called to unsubscribe from a topic. The arguments are:
           - `ctx` (any) - GraphQL context object.
           - `topic` (string) - The subscription topic.
   - Returns
