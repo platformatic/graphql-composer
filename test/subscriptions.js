@@ -4,7 +4,7 @@ const { once } = require('node:events')
 const { test } = require('node:test')
 const { setTimeout: sleep } = require('node:timers/promises')
 const { SubscriptionClient } = require('@mercuriusjs/subscription-client')
-const { gqlRequest, startRouter } = require('./helper')
+const { graphqlRequest, startRouter } = require('./helper')
 
 test('simple subscription', async (t) => {
   const router = await startRouter(t, ['authors-subgraph'])
@@ -36,7 +36,7 @@ test('simple subscription', async (t) => {
     client.emit('message', data.payload)
   })
   await sleep(200) // Make sure the subscription has finished setting up.
-  const mutation = await gqlRequest(router, `
+  const mutation = await graphqlRequest(router, `
     mutation {
       publishBlogPost(authorId: "2299")
     }
@@ -45,7 +45,7 @@ test('simple subscription', async (t) => {
   const [message] = await once(client, 'message')
   assert.deepStrictEqual(message, { postPublished: { authorId: '2299' } })
 
-  const mutation2 = await gqlRequest(router, `
+  const mutation2 = await graphqlRequest(router, `
     mutation {
       publishBlogPost(authorId: "3333")
     }
@@ -58,7 +58,7 @@ test('simple subscription', async (t) => {
   client.close()
   await sleep(200) // Make sure the subscription has finished tearing down.
 
-  const mutation3 = await gqlRequest(router, `
+  const mutation3 = await graphqlRequest(router, `
     mutation {
       publishBlogPost(authorId: "4444")
     }
@@ -110,7 +110,7 @@ test('subscription with followup queries', async (t) => {
     client.emit('message', data.payload)
   })
   await sleep(200) // Make sure the subscription has finished setting up.
-  const mutation = await gqlRequest(router, `
+  const mutation = await graphqlRequest(router, `
     mutation {
       createReview(review: { bookId: "1", rating: 10, content: "Not sure" }) {
         id rating content

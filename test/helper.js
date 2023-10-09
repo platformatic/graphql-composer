@@ -25,7 +25,7 @@ async function startRouter (t, subgraphs, overrides = {}) {
 
     reset()
     server.register(Mercurius, { schema, resolvers, subscription: true })
-    server.get('/.well-known/gql-composition', async function (req, reply) {
+    server.get('/.well-known/graphql-composition', async function (req, reply) {
       const introspectionQuery = getIntrospectionQuery()
 
       return reply.graphql(introspectionQuery)
@@ -37,8 +37,8 @@ async function startRouter (t, subgraphs, overrides = {}) {
       entities,
       server: {
         host,
-        composeEndpoint: '/.well-known/gql-composition',
-        gqlEndpoint: '/graphql'
+        composeEndpoint: '/.well-known/graphql-composition',
+        graphqlEndpoint: '/graphql'
       }
     }
   })
@@ -83,7 +83,7 @@ async function startRouter (t, subgraphs, overrides = {}) {
   return router
 }
 
-async function gqlRequest (router, query, variables) {
+async function graphqlRequest (router, query, variables) {
   const response = await router.inject({
     path: '/graphql',
     method: 'POST',
@@ -103,4 +103,4 @@ async function gqlRequest (router, query, variables) {
   return data
 }
 
-module.exports = { gqlRequest, startRouter }
+module.exports = { graphqlRequest, startRouter }

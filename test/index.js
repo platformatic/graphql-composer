@@ -1,7 +1,7 @@
 'use strict'
 const { deepStrictEqual } = require('node:assert')
 const { test } = require('node:test')
-const { gqlRequest, startRouter } = require('./helper')
+const { graphqlRequest, startRouter } = require('./helper')
 
 test('proxy a simple single query to a single subgraph', async (t) => {
   const router = await startRouter(t, ['authors-subgraph'])
@@ -12,7 +12,7 @@ test('proxy a simple single query to a single subgraph', async (t) => {
       }
     }
   `
-  const data = await gqlRequest(router, query)
+  const data = await graphqlRequest(router, query)
 
   deepStrictEqual(data, {
     list: [{ id: '1', name: { firstName: 'Peter', lastName: 'Pluck' } }]
@@ -28,7 +28,7 @@ test('query with a literal argument', async (t) => {
       }
     }
   `
-  const data = await gqlRequest(router, query)
+  const data = await graphqlRequest(router, query)
 
   deepStrictEqual(data, {
     getBook: { id: '1', genre: 'FICTION' }
@@ -44,7 +44,7 @@ test('query with a variable argument', async (t) => {
       }
     }
   `
-  const data = await gqlRequest(router, query, { id: 2 })
+  const data = await graphqlRequest(router, query, { id: 2 })
 
   deepStrictEqual(data, {
     getBook: { id: '2', genre: 'NONFICTION' }
@@ -67,7 +67,7 @@ test('nested query with a literal argument', async (t) => {
       }
     }
   `
-  const data = await gqlRequest(router, query)
+  const data = await graphqlRequest(router, query)
 
   deepStrictEqual(data, {
     list: [
@@ -99,7 +99,7 @@ test('nested query with a variable argument', async (t) => {
       }
     }
   `
-  const data = await gqlRequest(router, query, { id: 1 })
+  const data = await graphqlRequest(router, query, { id: 1 })
 
   deepStrictEqual(data, {
     list: [
@@ -124,7 +124,7 @@ test('support query aliases', async (t) => {
       }
     }
   `
-  const data = await gqlRequest(router, query)
+  const data = await graphqlRequest(router, query)
 
   deepStrictEqual(data, {
     aliasedGetBook: { id: '1', genre: 'FICTION' }
@@ -138,7 +138,7 @@ test('scalar return type', async (t) => {
       getBookTitle(id: 1)
     }
   `
-  const data = await gqlRequest(router, query)
+  const data = await graphqlRequest(router, query)
 
   deepStrictEqual(data, {
     getBookTitle: 'A Book About Things That Never Happened'
@@ -155,7 +155,7 @@ test('query with meta fields', async (t) => {
       }
     }
   `
-  const data = await gqlRequest(router, query)
+  const data = await graphqlRequest(router, query)
 
   deepStrictEqual(data, {
     getBook: {
@@ -177,7 +177,7 @@ test('query with a fragment', async (t) => {
       }
     }
   `
-  const data = await gqlRequest(router, query, { id: 1 })
+  const data = await graphqlRequest(router, query, { id: 1 })
 
   deepStrictEqual(data, {
     getBook: {
@@ -202,7 +202,7 @@ test('resolves a partial entity from a single subgraph', async (t) => {
       }
     }
   `
-  const data = await gqlRequest(router, query)
+  const data = await graphqlRequest(router, query)
 
   deepStrictEqual(data, {
     getReviewBook: {
@@ -236,7 +236,7 @@ test('resolves an entity across multiple subgraphs', async (t) => {
         }
       }
     `
-    const data = await gqlRequest(router, query)
+    const data = await graphqlRequest(router, query)
 
     deepStrictEqual(data, {
       getReviewBook: {
@@ -269,7 +269,7 @@ test('resolves an entity across multiple subgraphs', async (t) => {
         }
       }
     `
-    const data = await gqlRequest(router, query)
+    const data = await graphqlRequest(router, query)
 
     deepStrictEqual(data, {
       getBook: {
@@ -302,7 +302,7 @@ test('resolves an entity across multiple subgraphs', async (t) => {
         }
       }
     `
-    const data = await gqlRequest(router, query)
+    const data = await graphqlRequest(router, query)
 
     deepStrictEqual(data, {
       getReviewBook: {
@@ -334,7 +334,7 @@ test('resolves an entity across multiple subgraphs', async (t) => {
         }
       }
     `
-    const data = await gqlRequest(router, query)
+    const data = await graphqlRequest(router, query)
 
     deepStrictEqual(data, {
       getBook: {
@@ -364,7 +364,7 @@ test('multiple queries in a single request', async (t) => {
       }
     }
   `
-  const data = await gqlRequest(router, query)
+  const data = await graphqlRequest(router, query)
 
   deepStrictEqual(data, {
     getBook: { id: '2', genre: 'NONFICTION' },
@@ -383,7 +383,7 @@ test('Mutations', async () => {
       }
     `
     const author = { firstName: 'John', lastName: 'Johnson' }
-    const data = await gqlRequest(router, query, { author })
+    const data = await graphqlRequest(router, query, { author })
 
     deepStrictEqual(data, {
       createAuthor: {
@@ -402,7 +402,7 @@ test('Mutations', async () => {
         }
       }
     `
-    const data = await gqlRequest(router, query)
+    const data = await graphqlRequest(router, query)
 
     deepStrictEqual(data, {
       createAuthor: {
