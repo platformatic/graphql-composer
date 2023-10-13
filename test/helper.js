@@ -16,11 +16,10 @@ async function startRouter (t, subgraphs, overrides = {}) {
       schema
     } = require(join(fixturesDir, subgraph))
     const server = Fastify()
-
-    t.after(() => {
+    t.after(async () => {
       try {
-        server.close()
-      } catch {} // Ignore errors.
+        await server.close()
+      } catch { } // Ignore errors.
     })
 
     reset()
@@ -103,4 +102,21 @@ async function graphqlRequest (router, query, variables) {
   return data
 }
 
-module.exports = { graphqlRequest, startRouter }
+async function startGraphqlService (t, options) {
+  const service = Fastify()
+
+  service.register(Mercurius, options)
+  service.get('/graphql-composition', async function (req, reply) {
+    return reply.graphql(getIntrospectionQuery())
+  })
+
+  t.after(async () => {
+    try {
+      await service.close()
+    } catch { } // Ignore errors.
+  })
+
+  return service
+}
+
+module.exports = { graphqlRequest, startRouter, startGraphqlService }
