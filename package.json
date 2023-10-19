@@ -2,7 +2,7 @@
   "name": "@platformatic/graphql-composer",
   "version": "0.2.0",
   "description": "GraphQL API Composer",
-  "license": "Apache 2.0",
+  "license": "Apache-2.0",
   "main": "lib/index.js",
   "author": "Colin J. Ihrig <cjihrig@gmail.com> (http://www.cjihrig.com/)",
   "scripts": {
