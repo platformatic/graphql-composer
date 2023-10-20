@@ -4,7 +4,6 @@ const { test } = require('node:test')
 
 const { compose } = require('../lib')
 const { startGraphqlService, graphqlRequest } = require('./helper')
-const { buildClientSchema } = require('graphql')
 
 test('should build a service using composer without subscriptions', async (t) => {
   let calls = 0
@@ -38,7 +37,7 @@ test('should build a service using composer without subscriptions', async (t) =>
   })
 
   const router = await startGraphqlService(t, {
-    schema: buildClientSchema(composer.toSchema()),
+    schema: composer.toSdl(),
     resolvers: composer.resolvers
   })
 
