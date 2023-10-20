@@ -89,7 +89,6 @@ The following example shows how the GraphQL API Composer can be used with Fastif
 'use strict';
 const { compose } = require('@platformatic/graphql-composer')
 const Fastify = require('fastify')
-const { buildClientSchema } = require('graphql')
 const Mercurius = require('mercurius')
 
 async function main() {
@@ -149,8 +148,7 @@ async function main() {
   const router = Fastify()
 
   router.register(Mercurius, {
-    // buildClientSchema() is used here to create a GraphQL SDL string.
-    schema: buildClientSchema(composer.toSchema()),
+    schema: composer.toSdl(),
     resolvers: composer.resolvers,
     subscription: true
   })
@@ -207,6 +205,15 @@ When this function is called, all of the subgraph schemas are retrieved and merg
 ### `Composer` class
 
 Instances of the `Composer` class are returned from the `compose()` function. The `Composer` constructor is not exposed as part of the public API.
+
+#### `Composer.prototype.toSdl()`
+
+  - Arguments
+    - None
+  - Returns
+    - `SDL` string
+
+Returns the SDL of the supergraph as a string; this can be passed to the GraphQL service as a schema definition.
 
 #### `Composer.prototype.toSchema()`
 

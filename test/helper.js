@@ -2,7 +2,7 @@
 const { strictEqual } = require('node:assert')
 const { join } = require('node:path')
 const Fastify = require('fastify')
-const { buildClientSchema, getIntrospectionQuery } = require('graphql')
+const { getIntrospectionQuery } = require('graphql')
 const Mercurius = require('mercurius')
 const { compose } = require('../lib')
 const fixturesDir = join(__dirname, '..', 'fixtures')
@@ -72,7 +72,7 @@ async function startRouter (t, subgraphs, overrides = {}) {
   const router = Fastify()
 
   router.register(Mercurius, {
-    schema: buildClientSchema(composer.toSchema()),
+    schema: composer.toSdl(),
     resolvers: composer.resolvers,
     subscription: true
   })
