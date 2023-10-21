@@ -24,6 +24,17 @@ async function startRouter (t, subgraphs, overrides = {}) {
     })
 
     reset()
+
+    const subgraphOverrides = overrides?.subgraphs?.[subgraph]
+
+    if (subgraphOverrides) {
+      if (subgraphOverrides.entities) {
+        for (const [k, v] of Object.entries(subgraphOverrides.entities)) {
+          entities[k] = { ...entities[k], ...v }
+        }
+      }
+    }
+
     server.register(Mercurius, { schema, resolvers, subscription: true })
     server.get('/.well-known/graphql-composition', async function (req, reply) {
       const introspectionQuery = getIntrospectionQuery()

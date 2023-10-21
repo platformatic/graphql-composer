@@ -52,12 +52,7 @@ const resolvers = {
 const entities = {
   Book: {
     referenceListResolverName: 'getBooksByIds',
-    primaryKeyFields: ['id'],
-    adapter (partialResult) {
-      return {
-        id: partialResult.id
-      }
-    }
+    primaryKeyFields: ['id']
   }
 }
 

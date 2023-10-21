@@ -1,5 +1,5 @@
 'use strict'
-const { deepStrictEqual } = require('node:assert')
+const { deepStrictEqual, rejects, strictEqual } = require('node:assert')
 const { test } = require('node:test')
 const { graphqlRequest, startRouter } = require('./helper')
 
@@ -410,5 +410,47 @@ test('Mutations', async () => {
         name: { firstName: 'Tuco', lastName: 'Gustavo' }
       }
     })
+  })
+})
+
+test('throws if adapter returns non-object', async (t) => {
+  const overrides = {
+    subgraphs: {
+      'books-subgraph': {
+        entities: {
+          Book: {
+            adapter (partialResult) {
+              return 'nope'
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const router = await startRouter(t, ['books-subgraph', 'reviews-subgraph'], overrides)
+  const query = `
+    query {
+      getReviewBook(id: 1) {
+        id
+        title
+        genre
+        reviews {
+          id
+          rating
+          content
+        }
+      }
+    }
+  `
+
+  await rejects(async () => {
+    await graphqlRequest(router, query)
+  }, (err) => {
+    strictEqual(Array.isArray(err), true)
+    strictEqual(err.length, 1)
+    strictEqual(err[0].message, 'adapter did not return an object. returned nope.')
+    deepStrictEqual(err[0].path, ['getReviewBook'])
+    return true
   })
 })
