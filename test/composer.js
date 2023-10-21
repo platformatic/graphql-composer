@@ -59,7 +59,5 @@ test('should get sdl from composer', async (t) => {
     resolvers: composer.resolvers
   })
 
-  console.log(composer.toSdl())
-
-  assert.equal(expectedSdl, composer.toSdl())
+  assert.strictEqual(expectedSdl, composer.toSdl())
 })
