@@ -128,7 +128,7 @@ test('should handle partial subgraphs', async (t) => {
   {
     let errors = 0
     const composer = await compose({
-      onSubgraphError: ({ error }) => {
+      onSubgraphError: (error) => {
         assert.strictEqual(error.message, `Could not process schema from '${services[0].host}/get-introspection'`)
         errors++
       },
@@ -151,7 +151,7 @@ test('should handle all the unreachable subgraphs', async (t) => {
   let errors = 0
 
   const composer = await compose({
-    onSubgraphError: ({ error }) => {
+    onSubgraphError: (error) => {
       assert.strictEqual(error.message, "Could not process schema from 'http://unreachable.local/.well-known/graphql-composition'")
       errors++
     },

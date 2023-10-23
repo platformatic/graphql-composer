@@ -181,7 +181,7 @@ main()
           - `referenceListResolverName` (string, required) - The name of a resolver used to retrieve a list of objects by their primary keys.
       - `onSubgraphError` (function, optional) - Hook called when an error occurs getting schema from a subgraph. The default function will throw the error. The arguments are:
           - `error` (error) - The error.
-          - `subgraph` (error) - The erroring subgraph.
+          - `subgraph` (object) - The erroring subgraph.
       - `subscriptions` (object, optional) - Subscription hooks. This is required if subscriptions are used. This object adheres to the following schema.
         - `onError(ctx, topic, error)` (function, required) - Hook called when a subscription error occurs. The arguments are:
           - `ctx` (any) - GraphQL context object.
