@@ -76,6 +76,7 @@ async function startRouter (t, subgraphs, overrides = {}) {
     }
   }
   const routerConfig = {
+    onSubgraphError: () => {},
     subgraphs: subgraphConfigs,
     subscriptions: { ...defaultSubscriptionHandler, ...overrides.subscriptions }
   }

@@ -49,6 +49,7 @@ test('should get sdl from composer', async (t) => {
   }
 
   const composer = await compose({
+    onSubgraphError: () => {},
     subgraphs: services.map(service => (
       {
         server: {
@@ -66,7 +67,6 @@ test('should get sdl from composer', async (t) => {
   })
 
   assert.strictEqual(expectedSdl, composer.toSdl())
-  assert.equal(expectedSdl, composer.toSdl())
 })
 
 test('should handle partial subgraphs', async (t) => {
@@ -108,6 +108,7 @@ test('should handle partial subgraphs', async (t) => {
 
   {
     const composer = await compose({
+      onSubgraphError: () => {},
       subgraphs: services.map(service => (
         {
           server: {
@@ -118,13 +119,14 @@ test('should handle partial subgraphs', async (t) => {
         }
       ))
     })
-    assert.equal(expectedSdl1, composer.toSdl())
+    assert.strictEqual(expectedSdl1, composer.toSdl())
   }
 
   await services[0].instance.close()
 
   {
     const composer = await compose({
+      onSubgraphError: () => {},
       subgraphs: services.map(service => (
         {
           server: {
@@ -135,12 +137,13 @@ test('should handle partial subgraphs', async (t) => {
         }
       ))
     })
-    assert.equal(expectedSdl2, composer.toSdl())
+    assert.strictEqual(expectedSdl2, composer.toSdl())
   }
 })
 
 test('should handle all the unreachable subgraphs', async (t) => {
   const composer = await compose({
+    onSubgraphError: () => {},
     subgraphs: [
       {
         server: {
@@ -149,8 +152,8 @@ test('should handle all the unreachable subgraphs', async (t) => {
       }
     ]
   })
-  assert.equal('', composer.toSdl())
-  assert.deepEqual({}, composer.resolvers)
+  assert.strictEqual('', composer.toSdl())
+  assert.deepStrictEqual(Object.create(null), composer.resolvers)
 })
 
 test('should fire onSubgraphError retrieving subgraphs from unreachable services', async (t) => {
@@ -198,11 +201,11 @@ test('should fire onSubgraphError retrieving subgraphs from unreachable services
       }
     )),
     onSubgraphError: ({ error }) => {
-      assert.equal(expectedErrorMessage, error.message)
+      assert.strictEqual(expectedErrorMessage, error.message)
       errors++
     }
   })
 
-  assert.equal(errors, 2)
-  assert.equal(expectedSdl, composer.toSdl())
+  assert.strictEqual(errors, 2)
+  assert.strictEqual(expectedSdl, composer.toSdl())
 })
