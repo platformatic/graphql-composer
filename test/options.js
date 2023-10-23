@@ -27,7 +27,6 @@ test('should build a service using composer without subscriptions', async (t) =>
   const host = await service.listen()
 
   const composer = await compose({
-    onSubgraphError: () => {},
     subgraphs: [{ server: { host } }]
   })
 
@@ -47,17 +46,8 @@ test('should build a service using composer without subscriptions', async (t) =>
   assert.strictEqual(calls, 1)
 })
 
-test('should get error without onSubgraphError function', async (t) => {
-  assert.rejects(compose({
-    subgraphs: [{ server: { host: 'http://graph1.local' } }]
-  }), {
-    name: 'TypeError',
-    message: ('onSubgraphError must be a function')
-  })
-})
-
-test('should get error with onSubgraphError not a function', async (t) => {
-  assert.rejects(compose({
+test('should get error when onSubgraphError is not a function', async (t) => {
+  await assert.rejects(compose({
     subgraphs: [{ server: { host: 'http://graph1.local' } }],
     onSubgraphError: 1
   }), {

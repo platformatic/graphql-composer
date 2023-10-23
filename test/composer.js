@@ -49,7 +49,6 @@ test('should get sdl from composer', async (t) => {
   }
 
   const composer = await compose({
-    onSubgraphError: () => {},
     subgraphs: services.map(service => (
       {
         server: {
@@ -108,7 +107,6 @@ test('should handle partial subgraphs', async (t) => {
 
   {
     const composer = await compose({
-      onSubgraphError: () => {},
       subgraphs: services.map(service => (
         {
           server: {
@@ -126,7 +124,6 @@ test('should handle partial subgraphs', async (t) => {
 
   {
     const composer = await compose({
-      onSubgraphError: () => {},
       subgraphs: services.map(service => (
         {
           server: {
@@ -143,7 +140,6 @@ test('should handle partial subgraphs', async (t) => {
 
 test('should handle all the unreachable subgraphs', async (t) => {
   const composer = await compose({
-    onSubgraphError: () => {},
     subgraphs: [
       {
         server: {
