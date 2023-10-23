@@ -9,36 +9,32 @@ test('should build a service using composer without subscriptions', async (t) =>
   let calls = 0
 
   const service = await startGraphqlService(t, {
-    schema: `
+    mercurius: {
+      schema: `
     type Query {
       add(x: Int, y: Int): Int
     }`,
-    resolvers: {
-      Query: {
-        async add (_, { x, y }) {
-          calls++
-          return x + y
+      resolvers: {
+        Query: {
+          async add (_, { x, y }) {
+            calls++
+            return x + y
+          }
         }
       }
     }
   })
-  await service.listen({ port: 0 })
+  const host = await service.listen()
 
   const composer = await compose({
-    subgraphs: [
-      {
-        server: {
-          host: 'http://localhost:' + service.server.address().port,
-          composeEndpoint: '/graphql-composition',
-          graphqlEndpoint: '/graphql'
-        }
-      }
-    ]
+    subgraphs: [{ server: { host } }]
   })
 
   const router = await startGraphqlService(t, {
-    schema: composer.toSdl(),
-    resolvers: composer.resolvers
+    mercurius: {
+      schema: composer.toSdl(),
+      resolvers: composer.resolvers
+    }
   })
 
   await router.listen({ port: 0 })
