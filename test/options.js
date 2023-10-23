@@ -9,36 +9,32 @@ test('should build a service using composer without subscriptions', async (t) =>
   let calls = 0
 
   const service = await startGraphqlService(t, {
-    schema: `
+    mercurius: {
+      schema: `
     type Query {
       add(x: Int, y: Int): Int
     }`,
-    resolvers: {
-      Query: {
-        async add (_, { x, y }) {
-          calls++
-          return x + y
+      resolvers: {
+        Query: {
+          async add (_, { x, y }) {
+            calls++
+            return x + y
+          }
         }
       }
     }
   })
-  await service.listen({ port: 0 })
+  const host = await service.listen()
 
   const composer = await compose({
-    subgraphs: [
-      {
-        server: {
-          host: 'http://localhost:' + service.server.address().port,
-          composeEndpoint: '/graphql-composition',
-          graphqlEndpoint: '/graphql'
-        }
-      }
-    ]
+    subgraphs: [{ server: { host } }]
   })
 
   const router = await startGraphqlService(t, {
-    schema: composer.toSdl(),
-    resolvers: composer.resolvers
+    mercurius: {
+      schema: composer.toSdl(),
+      resolvers: composer.resolvers
+    }
   })
 
   await router.listen({ port: 0 })
@@ -47,5 +43,15 @@ test('should build a service using composer without subscriptions', async (t) =>
   const data = await graphqlRequest(router, query)
   assert.deepStrictEqual(data, { add: 4 })
 
-  assert.equal(calls, 1)
+  assert.strictEqual(calls, 1)
+})
+
+test('should get error when onSubgraphError is not a function', async (t) => {
+  await assert.rejects(compose({
+    subgraphs: [{ server: { host: 'http://graph1.local' } }],
+    onSubgraphError: 1
+  }), {
+    name: 'TypeError',
+    message: 'onSubgraphError must be a function'
+  })
 })

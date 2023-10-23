@@ -179,6 +179,9 @@ main()
           - `adapter(partialResult)` (function, optional) - When resolving an entity across multiple subgraphs, an initial query is made to one subgraph followed by one or more followup queries to other subgraphs. The initial query must return enough information to identify the corresponding data in the other subgraphs. This function is invoked with the result of the initial query. It should return an object whose keys correspond to the `primaryKeyFields` configuration.
           - `primaryKeyFields` (array of strings, required) - The fields used to uniquely identify objects of this type.
           - `referenceListResolverName` (string, required) - The name of a resolver used to retrieve a list of objects by their primary keys.
+      - `onSubgraphError` (function, optional) - Hook called when an error occurs getting schema from a subgraph. The default function will throw the error. The arguments are:
+          - `error` (error) - The error.
+          - `subgraph` (object) - The erroring subgraph.
       - `subscriptions` (object, optional) - Subscription hooks. This is required if subscriptions are used. This object adheres to the following schema.
         - `onError(ctx, topic, error)` (function, required) - Hook called when a subscription error occurs. The arguments are:
           - `ctx` (any) - GraphQL context object.

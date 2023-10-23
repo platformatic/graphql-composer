@@ -114,13 +114,16 @@ async function graphqlRequest (router, query, variables) {
   return data
 }
 
-async function startGraphqlService (t, options) {
-  const service = Fastify()
+async function startGraphqlService (t, { fastify, mercurius, exposeIntrospection = {} }) {
+  const service = Fastify(fastify ?? { logger: false })
 
-  service.register(Mercurius, options)
-  service.get('/graphql-composition', async function (req, reply) {
-    return reply.graphql(getIntrospectionQuery())
-  })
+  service.register(Mercurius, mercurius)
+
+  if (exposeIntrospection) {
+    service.get(exposeIntrospection.path || '/.well-known/graphql-composition', async function (req, reply) {
+      return reply.graphql(getIntrospectionQuery())
+    })
+  }
 
   t.after(async () => {
     try {
