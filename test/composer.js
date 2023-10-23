@@ -106,7 +106,9 @@ test('should handle partial subgraphs', async (t) => {
     '}'
 
   {
+    let errors = 0
     const composer = await compose({
+      onSubgraphError: () => { errors++ },
       subgraphs: services.map(service => (
         {
           server: {
@@ -117,13 +119,19 @@ test('should handle partial subgraphs', async (t) => {
         }
       ))
     })
+    assert.strictEqual(errors, 0)
     assert.strictEqual(expectedSdl1, composer.toSdl())
   }
 
   await services[0].instance.close()
 
   {
+    let errors = 0
     const composer = await compose({
+      onSubgraphError: ({ error }) => {
+        assert.strictEqual(error.message, `Could not process schema from '${services[0].host}/get-introspection'`)
+        errors++
+      },
       subgraphs: services.map(service => (
         {
           server: {
@@ -134,12 +142,19 @@ test('should handle partial subgraphs', async (t) => {
         }
       ))
     })
+    assert.strictEqual(errors, 1)
     assert.strictEqual(expectedSdl2, composer.toSdl())
   }
 })
 
 test('should handle all the unreachable subgraphs', async (t) => {
+  let errors = 0
+
   const composer = await compose({
+    onSubgraphError: ({ error }) => {
+      assert.strictEqual(error.message, "Could not process schema from 'http://unreachable.local/.well-known/graphql-composition'")
+      errors++
+    },
     subgraphs: [
       {
         server: {
@@ -148,6 +163,8 @@ test('should handle all the unreachable subgraphs', async (t) => {
       }
     ]
   })
+
+  assert.strictEqual(errors, 1)
   assert.strictEqual('', composer.toSdl())
   assert.deepStrictEqual(Object.create(null), composer.resolvers)
 })
@@ -171,7 +188,6 @@ test('should fire onSubgraphError retrieving subgraphs from unreachable services
   const expectedSdl = 'type Query {\n' +
     '  sub(x: Int, y: Int): Int\n' +
     '}'
-  const expectedErrorMessage = "Could not process schema from 'http://unreachable.local/.well-known/graphql-composition'"
 
   for (const service of services) {
     if (service.off) {
@@ -189,17 +205,14 @@ test('should fire onSubgraphError retrieving subgraphs from unreachable services
 
   let errors = 0
   const composer = await compose({
+    onSubgraphError: () => { errors++ },
     subgraphs: services.map(service => (
       {
         server: {
           host: service.host
         }
       }
-    )),
-    onSubgraphError: ({ error }) => {
-      assert.strictEqual(expectedErrorMessage, error.message)
-      errors++
-    }
+    ))
   })
 
   assert.strictEqual(errors, 2)
