@@ -4,6 +4,7 @@ const { join } = require('node:path')
 const Fastify = require('fastify')
 const { getIntrospectionQuery } = require('graphql')
 const Mercurius = require('mercurius')
+const { request } = require('undici')
 const { compose } = require('../lib')
 const fixturesDir = join(__dirname, '..', 'fixtures')
 
@@ -134,4 +135,19 @@ async function startGraphqlService (t, { fastify, mercurius, exposeIntrospection
   return service
 }
 
-module.exports = { graphqlRequest, startRouter, startGraphqlService }
+async function graphqlNetworkRequest ({ query, variables, url, host }) {
+  const { body, statusCode } = await request(url || host + '/graphql', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ query, variables })
+  })
+
+  const content = await body.json()
+  if (statusCode !== 200) { console.log(statusCode, content) }
+
+  return content.errors ? content.errors : content.data
+}
+
+module.exports = { graphqlRequest, graphqlNetworkRequest, startRouter, startGraphqlService }
