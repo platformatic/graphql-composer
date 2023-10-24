@@ -411,6 +411,32 @@ test('Mutations', async () => {
       }
     })
   })
+
+  await test('mutation with input array', async (t) => {
+    const router = await startRouter(t, ['authors-subgraph'])
+    const query = `
+      mutation {
+        batchCreateAuthor(authors: [
+          { firstName: "Ernesto", lastName: "de la Cruz" },
+          { firstName: "Hector", lastName: "Rivera" },
+        ]) {
+          id name { firstName lastName }
+        }
+      }
+    `
+    const data = await graphqlRequest(router, query)
+
+    deepStrictEqual(data, {
+      batchCreateAuthor: [{
+        id: '2',
+        name: { firstName: 'Ernesto', lastName: 'de la Cruz' }
+      },
+      {
+        id: '3',
+        name: { firstName: 'Hector', lastName: 'Rivera' }
+      }]
+    })
+  })
 })
 
 test('throws if adapter returns non-object', async (t) => {
