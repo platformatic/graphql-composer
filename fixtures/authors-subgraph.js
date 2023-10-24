@@ -32,6 +32,7 @@ const schema = `
 
   type Mutation {
     createAuthor(author: AuthorInput!): Author!
+    batchCreateAuthor(authors: [AuthorInput]!): [Author]!
     publishBlogPost(authorId: ID!): Boolean!
   }
 
@@ -89,6 +90,21 @@ const resolvers = {
 
       authors[id] = author
       return author
+    },
+
+    async batchCreateAuthor (_, { authors: authorsInput }) {
+      const created = []
+      for (const authorInput of authorsInput) {
+        const id = Object.keys(authors).length + 1
+        const author = {
+          id,
+          name: { ...authorInput }
+        }
+
+        authors[id] = author
+        created.push(author)
+      }
+      return created
     },
 
     async publishBlogPost (_, { authorId }, context) {
