@@ -371,3 +371,8 @@ test('should fire onSubgraphError retrieving subgraphs from unreachable services
   assert.strictEqual(errors, 2)
   assert.strictEqual(expectedSdl, composer.toSdl())
 })
+
+// TODO query with variables
+// query byIds ($ids:[ID]) { artists (where: { id: { in: $ids } } ) { id } }
+// variables { ids: ['1','2','3']}
+

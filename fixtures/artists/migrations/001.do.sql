@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS artists (
   profession TEXT
 );
 
-INSERT INTO artists (id, first_name, last_name) VALUES
+INSERT INTO artists (id, first_name, last_name, profession) VALUES
 (101, 'Christopher', 'Nolan', 'Director'),
 (201, 'Luciano', 'Pavarotti', 'Singer'),
 (301, 'Brian', 'Molko', 'Singer'),

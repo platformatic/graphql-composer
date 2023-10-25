@@ -1,7 +1,7 @@
 {
   "server":{
     "logger": {
-      "level": "warn"
+      "level": "info"
     }
   },
   "db": {
@@ -11,5 +11,10 @@
   "migrations": {
     "dir": "./migrations",
     "autoApply": true
+  },
+  "plugins": {
+    "paths": [
+      "./extends.js"
+    ]
   }
 }
