@@ -41,21 +41,30 @@ const schema = `
   }
 `
 
-let authors
-let todos
+const data = {
+  authors: null,
+  todos: null
+}
 
 function reset () {
-  authors = {
+  data.authors = {
     1: {
       id: 1,
       name: {
         firstName: 'Peter',
         lastName: 'Pluck'
       }
+    },
+    2: {
+      id: 2,
+      name: {
+        firstName: 'John',
+        lastName: 'Writer'
+      }
     }
   }
 
-  todos = {
+  data.todos = {
     1: {
       id: 1,
       authorId: 1,
@@ -74,34 +83,34 @@ reset()
 const resolvers = {
   Query: {
     async get (_, { id }) {
-      return authors[id]
+      return data.authors[id]
     },
     async list () {
-      return Object.values(authors)
+      return Object.values(data.authors)
     }
   },
   Mutation: {
     async createAuthor (_, { author: authorInput }) {
-      const id = Object.keys(authors).length + 1
+      const id = Object.keys(data.authors).length + 1
       const author = {
         id,
         name: { ...authorInput }
       }
 
-      authors[id] = author
+      data.authors[id] = author
       return author
     },
 
     async batchCreateAuthor (_, { authors: authorsInput }) {
       const created = []
       for (const authorInput of authorsInput) {
-        const id = Object.keys(authors).length + 1
+        const id = Object.keys(data.authors).length + 1
         const author = {
           id,
           name: { ...authorInput }
         }
 
-        authors[id] = author
+        data.authors[id] = author
         created.push(author)
       }
       return created
@@ -129,11 +138,11 @@ const resolvers = {
   },
   Author: {
     async todos (_, { id }) {
-      return Object.values(todos).filter((t) => {
+      return Object.values(data.todos).filter((t) => {
         return String(t.id) === id
       })
     }
   }
 }
 
-module.exports = { schema, reset, resolvers }
+module.exports = { name: 'authors', schema, reset, resolvers }

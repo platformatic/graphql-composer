@@ -7,19 +7,21 @@ const Mercurius = require('mercurius')
 const { compose } = require('../lib')
 const fixturesDir = join(__dirname, '..', 'fixtures')
 
-async function startRouter (t, subgraphs, overrides = {}) {
+async function startRouter (t, subgraphs, overrides = {}, extend) {
   const promises = subgraphs.map(async (subgraph) => {
-    const {
-      entities,
+    let {
+      name,
+      entities = {},
       reset,
       resolvers,
-      schema
+      schema,
+      data
     } = require(join(fixturesDir, subgraph))
     const server = Fastify()
 
     t.after(async () => {
       try {
-        await server.close()
+        // await server.close()
       } catch {} // Ignore errors.
     })
 
@@ -28,6 +30,7 @@ async function startRouter (t, subgraphs, overrides = {}) {
     const subgraphOverrides = overrides?.subgraphs?.[subgraph]
 
     if (subgraphOverrides) {
+      entities = structuredClone(entities)
       if (subgraphOverrides.entities) {
         for (const [k, v] of Object.entries(subgraphOverrides.entities)) {
           entities[k] = { ...entities[k], ...v }
@@ -35,16 +38,27 @@ async function startRouter (t, subgraphs, overrides = {}) {
       }
     }
 
-    server.register(Mercurius, { schema, resolvers, subscription: true })
+    server.register(Mercurius, { schema, resolvers, graphiql: true, subscription: true })
     server.get('/.well-known/graphql-composition', async function (req, reply) {
       const introspectionQuery = getIntrospectionQuery()
 
       return reply.graphql(introspectionQuery)
     })
 
+    const extendServer = extend?.[subgraph]
+    if (extendServer) {
+      await server.ready()
+      const { schema, resolvers } = extendServer(data)
+      schema && server.graphql.extendSchema(schema)
+      resolvers && server.graphql.defineResolvers(resolvers)
+    }
+
     const host = await server.listen()
 
+    console.log(subgraph, host)
+
     return {
+      name,
       entities,
       server: {
         host,
@@ -85,6 +99,7 @@ async function startRouter (t, subgraphs, overrides = {}) {
   router.register(Mercurius, {
     schema: composer.toSdl(),
     resolvers: composer.resolvers,
+    graphiql: true,
     subscription: true
   })
 
@@ -104,12 +119,13 @@ async function graphqlRequest (router, query, variables) {
     body: JSON.stringify({ query, variables })
   })
 
-  strictEqual(response.statusCode, 200)
   const { data, errors } = response.json()
 
   if (errors) {
     throw errors
   }
+
+  strictEqual(response.statusCode, 200)
 
   return data
 }
