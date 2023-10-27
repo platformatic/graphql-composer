@@ -48,6 +48,21 @@ function reset () {
       id: 1,
       rating: 2,
       content: 'Would not read again.'
+    },
+    2: {
+      id: 2,
+      rating: 3,
+      content: 'So so.'
+    },
+    3: {
+      id: 3,
+      rating: 5,
+      content: 'Wow.'
+    },
+    4: {
+      id: 4,
+      rating: 1,
+      content: 'Good to start the fire.'
     }
   }
 
@@ -55,6 +70,18 @@ function reset () {
     1: {
       id: 1,
       reviews: [1]
+    },
+    2: {
+      id: 2,
+      reviews: [2]
+    },
+    3: {
+      id: 3,
+      reviews: [2, 3, 4]
+    },
+    4: {
+      id: 4,
+      reviews: []
     }
   }
 }
@@ -131,13 +158,13 @@ const resolvers = {
 const entities = {
   Book: {
     referenceListResolverName: 'getReviewBookByIds',
-    foreignKeyFields: ['id'],
-    adapter (partialResult) {
+    keys: [{ field: 'id', type: 'Book' }],
+    args (partialResults) {
       return {
-        ids: [partialResult.id]
+        ids: partialResults.map(r => r.id)
       }
     }
   }
 }
 
-module.exports = { entities, reset, resolvers, schema }
+module.exports = { name: 'reviews', entities, reset, resolvers, schema }

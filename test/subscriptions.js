@@ -119,7 +119,7 @@ test('subscription with followup queries', async (t) => {
   `)
   assert.deepStrictEqual(mutation, {
     createReview: {
-      id: '2',
+      id: '5',
       rating: 10,
       content: 'Not sure'
     }
@@ -127,7 +127,7 @@ test('subscription with followup queries', async (t) => {
   const [message] = await once(client, 'message')
   assert.deepStrictEqual(message, {
     reviewPosted: {
-      id: '2',
+      id: '5',
       rating: 10,
       content: 'Not sure',
       book: {
@@ -141,7 +141,7 @@ test('subscription with followup queries', async (t) => {
             content: 'Would not read again.'
           },
           {
-            id: '2',
+            id: '5',
             rating: 10,
             content: 'Not sure'
           }
@@ -201,7 +201,7 @@ test('subscription errors are propagated', async (t) => {
   `)
   assert.deepStrictEqual(mutation, {
     createReview: {
-      id: '2',
+      id: '5',
       rating: 10,
       content: 'Not sure'
     }

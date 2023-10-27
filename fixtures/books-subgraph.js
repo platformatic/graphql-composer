@@ -17,10 +17,10 @@ const schema = `
     getBooksByIds(id: [ID]!): [Book]!
   }
 `
-let library
+const data = { library: null }
 
 function reset () {
-  library = {
+  data.library = {
     1: {
       id: 1,
       title: 'A Book About Things That Never Happened',
@@ -39,21 +39,21 @@ reset()
 const resolvers = {
   Query: {
     async getBook (_, { id }) {
-      return library[id]
+      return data.library[id]
     },
     async getBookTitle (_, { id }) {
-      return library[id]?.title
+      return data.library[id]?.title
     },
     async getBooksByIds (_, { id }) {
-      return id.map((id) => { return library[id] })
+      return id.map((id) => { return data.library[id] })
     }
   }
 }
 const entities = {
   Book: {
     referenceListResolverName: 'getBooksByIds',
-    primaryKeyFields: ['id']
+    keys: [{ field: 'id', type: 'Book' }]
   }
 }
 
-module.exports = { entities, reset, resolvers, schema }
+module.exports = { name: 'books', entities, reset, resolvers, schema, data }

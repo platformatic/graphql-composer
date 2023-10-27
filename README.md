@@ -20,6 +20,7 @@ type Book {
 
 type Query {
   getBook(id: ID!): Book
+  // TODO >>> ids
   getBooksByIds(id: [ID]!): [Book]!
 }
 ```
@@ -106,16 +107,14 @@ async function main() {
         entities: {
           // Configuration for working with Book entities in this subgraph.
           Book: {
-            // Resolver for retrieving multiple Books by their primary key.
+            // Resolver for retrieving multiple Books.
             referenceListResolverName: 'getBooksByIds',
-            // Field(s) necessary to identify any individual Book object.
-            primaryKeyFields: ['id'],
+            // Field(s) necessary to identify any individual Book object and related types.
+            keys: [{ field: 'id', type: 'Book' }], TODO update
             // A function to map a partial result from another subgraph(s) to
-            // the primary key fields.
-            adapter (partialResult) {
-              return {
-                id: partialResult.id
-              }
+            // the key fields.
+            args (partialResults) {
+              // TODO update
             }
           }
         },
@@ -176,9 +175,10 @@ main()
           - `composeEndpoint` (string, optional) - The endpoint to retrieve the introspection query from. **Default:** `'/.well-known/graphql-composition'`. In case the endpoint is not available, a second call with introspection query will be sent to the `graphqlEndpoint`.
           - `graphqlEndpoint` (string, optional) - The endpoint to make GraphQL queries against. **Default:** `'/graphql'`.
         - `entities` (object, optional) - Configuration object for working with entities in this subgraph. Each key in this object is the name of an entity data type. This is required if the subgraph contains any entities. The values are objects with the the following schema:
-          - `adapter(partialResult)` (function, optional) - When resolving an entity across multiple subgraphs, an initial query is made to one subgraph followed by one or more followup queries to other subgraphs. The initial query must return enough information to identify the corresponding data in the other subgraphs. This function is invoked with the result of the initial query. It should return an object whose keys correspond to the `primaryKeyFields` configuration.
-          - `primaryKeyFields` (array of strings, required) - The fields used to uniquely identify objects of this type.
-          - `referenceListResolverName` (string, required) - The name of a resolver used to retrieve a list of objects by their primary keys.
+          - `referenceListResolverName` (string, required) - The name of the resolver used to retrieve a list of objects by their keys.
+          - `keys` (array of strings, required) - TODO The fields used to uniquely identify objects of this type.
+          - `args (partialResults)` (function, optional) - TODO
+           When resolving an entity across multiple subgraphs, an initial query is made to one subgraph followed by one or more followup queries to other subgraphs. The initial query must return enough information to identify the corresponding data in the other subgraphs. This function is invoked with the result of the initial query. It should return an array of objects whose keys correspond to the `keys` configuration.
       - `onSubgraphError` (function, optional) - Hook called when an error occurs getting schema from a subgraph. The default function will throw the error. The arguments are:
           - `error` (error) - The error.
           - `subgraph` (object) - The erroring subgraph.

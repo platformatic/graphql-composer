@@ -15,7 +15,7 @@ test('proxy a simple single query to a single subgraph', async (t) => {
   const data = await graphqlRequest(router, query)
 
   deepStrictEqual(data, {
-    list: [{ id: '1', name: { firstName: 'Peter', lastName: 'Pluck' } }]
+    list: [{ id: '1', name: { firstName: 'Peter', lastName: 'Pluck' } }, { id: '2', name: { firstName: 'John', lastName: 'Writer' } }]
   })
 })
 
@@ -77,7 +77,23 @@ test('nested query with a literal argument', async (t) => {
           firstName: 'Peter',
           lastName: 'Pluck'
         },
-        todos: [{ task: 'Get really creative' }]
+        todos: [
+          {
+            task: 'Get really creative'
+          }
+        ]
+      },
+      {
+        id: '2',
+        name: {
+          firstName: 'John',
+          lastName: 'Writer'
+        },
+        todos: [
+          {
+            task: 'Get really creative'
+          }
+        ]
       }
     ]
   })
@@ -109,7 +125,23 @@ test('nested query with a variable argument', async (t) => {
           firstName: 'Peter',
           lastName: 'Pluck'
         },
-        todos: [{ task: 'Write another book' }]
+        todos: [
+          {
+            task: 'Write another book'
+          }
+        ]
+      },
+      {
+        id: '2',
+        name: {
+          firstName: 'John',
+          lastName: 'Writer'
+        },
+        todos: [
+          {
+            task: 'Write another book'
+          }
+        ]
       }
     ]
   })
@@ -287,11 +319,11 @@ test('resolves an entity across multiple subgraphs', async (t) => {
     })
   })
 
-  await t.test('fetches foreign key fields not in selection set', async (t) => {
+  await t.test('fetches key fields not in selection set', async (t) => {
     const query = `
       query {
         getReviewBook(id: 1) {
-          # id not included and it is part of the foreign key.
+          # id not included and it is part of the keys.
           title
           genre
           reviews {
@@ -306,38 +338,6 @@ test('resolves an entity across multiple subgraphs', async (t) => {
 
     deepStrictEqual(data, {
       getReviewBook: {
-        title: 'A Book About Things That Never Happened',
-        genre: 'FICTION',
-        reviews: [
-          {
-            id: '1',
-            rating: 2,
-            content: 'Would not read again.'
-          }
-        ]
-      }
-    })
-  })
-
-  await t.test('fetches primary key fields not in selection set', async (t) => {
-    const query = `
-      query {
-        getBook(id: 1) {
-          # id not included and it is part of the primary key.
-          title
-          genre
-          reviews {
-            id
-            rating
-            content
-          }
-        }
-      }
-    `
-    const data = await graphqlRequest(router, query)
-
-    deepStrictEqual(data, {
-      getBook: {
         title: 'A Book About Things That Never Happened',
         genre: 'FICTION',
         reviews: [
@@ -368,7 +368,7 @@ test('multiple queries in a single request', async (t) => {
 
   deepStrictEqual(data, {
     getBook: { id: '2', genre: 'NONFICTION' },
-    list: [{ id: '1', name: { firstName: 'Peter', lastName: 'Pluck' } }]
+    list: [{ id: '1', name: { firstName: 'Peter', lastName: 'Pluck' } }, { id: '2', name: { firstName: 'John', lastName: 'Writer' } }]
   })
 })
 
@@ -387,7 +387,7 @@ test('Mutations', async () => {
 
     deepStrictEqual(data, {
       createAuthor: {
-        id: '2',
+        id: '3',
         name: { firstName: 'John', lastName: 'Johnson' }
       }
     })
@@ -406,7 +406,7 @@ test('Mutations', async () => {
 
     deepStrictEqual(data, {
       createAuthor: {
-        id: '2',
+        id: '3',
         name: { firstName: 'Tuco', lastName: 'Gustavo' }
       }
     })
@@ -428,34 +428,35 @@ test('Mutations', async () => {
 
     deepStrictEqual(data, {
       batchCreateAuthor: [{
-        id: '2',
+        id: '3',
         name: { firstName: 'Ernesto', lastName: 'de la Cruz' }
       },
       {
-        id: '3',
+        id: '4',
         name: { firstName: 'Hector', lastName: 'Rivera' }
       }]
     })
   })
 })
 
-test('throws if adapter returns non-object', async (t) => {
-  const overrides = {
-    subgraphs: {
-      'books-subgraph': {
-        entities: {
-          Book: {
-            adapter (partialResult) {
-              return 'nope'
+test('entities', async () => {
+  await test('throws if args function does not return an array of objects', async (t) => {
+    const overrides = {
+      subgraphs: {
+        'books-subgraph': {
+          entities: {
+            Book: {
+              args (partialResults) {
+                return 'nope'
+              }
             }
           }
         }
       }
     }
-  }
 
-  const router = await startRouter(t, ['books-subgraph', 'reviews-subgraph'], overrides)
-  const query = `
+    const router = await startRouter(t, ['books-subgraph', 'reviews-subgraph'], overrides)
+    const query = `
     query {
       getReviewBook(id: 1) {
         id
@@ -470,13 +471,137 @@ test('throws if adapter returns non-object', async (t) => {
     }
   `
 
-  await rejects(async () => {
-    await graphqlRequest(router, query)
-  }, (err) => {
-    strictEqual(Array.isArray(err), true)
-    strictEqual(err.length, 1)
-    strictEqual(err[0].message, 'adapter did not return an object. returned nope.')
-    deepStrictEqual(err[0].path, ['getReviewBook'])
-    return true
+    await rejects(async () => {
+      await graphqlRequest(router, query)
+    }, (err) => {
+      strictEqual(Array.isArray(err), true)
+      strictEqual(err.length, 1)
+      strictEqual(err[0].message, 'args function did not return an object. returned nope.')
+      deepStrictEqual(err[0].path, ['getReviewBook'])
+      return true
+    })
   })
+
+  await test('resolve foreign types by picking up keys', async (t) => {
+    const extend = {
+      'authors-subgraph': (data) => {
+        return {
+          schema: `
+          input In {
+            in: [ID]!
+          }
+          input IdsIn {
+            ids: In
+          }
+          input WhereIdsIn {
+            where: IdsIn
+          }
+
+          extend type Query {
+            authors (where: WhereIdsIn): [Author]
+          }
+          `,
+          resolvers: {
+            Query: {
+              authors: (_, args) => {
+                const ids = args.where.ids.in
+                return Object.values(data.authors).filter(a => ids.includes(a.id))
+              }
+            }
+          }
+        }
+      },
+      'books-subgraph': (data) => {
+        data.library[1].authorId = 1
+        data.library[2].authorId = 2
+        data.library[3] = {
+          id: 3,
+          title: 'Uknown memories',
+          genre: 'NONFICTION',
+          authorId: -1
+        }
+
+        return {
+          schema: `
+            type Author {
+              id: ID
+            }
+            
+            extend type Book {
+              author: Author
+            }
+          `,
+          resolvers: {
+            Book: {
+              author: (parent) => {
+                console.log('Author resolver', parent)
+                return { id: parent.authorId || data.library[parent.id]?.authorId }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    const overrides = {
+      subgraphs: {
+        'books-subgraph': {
+          entities: {
+            Book: {
+              referenceListResolverName: 'getBooksByIds',
+              // fiels of Book to identy entites
+              // pick up keys if entity is in selection fields
+              // TODO doc, example with author.id
+              keys: [{ field: 'id', type: 'Book' }, { field: 'author.id', type: 'Author' }],
+              args (partialResults) {
+                return { id: partialResults.map(r => r.id) }
+              }
+            }
+          }
+        },
+        'authors-subgraph': {
+          entities: {
+            Author: {
+              referenceListResolverName: 'authors',
+              keys: [{ field: 'id', type: 'Author' }],
+              args (partialResults) {
+                console.log(' ******** authors args', partialResults)
+                return { where: { ids: { in: partialResults.map(r => r.id) } } }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    const router = await startRouter(t, ['authors-subgraph', 'books-subgraph', 'reviews-subgraph'], overrides, extend)
+    const query = `
+    query {
+      getReviewBookByIds(ids: [1,2,3]) {
+        title
+        author {
+          name { lastName }
+        }
+        reviews {
+          rating
+        }
+      }
+    }
+    `
+
+    await router.listen({ port: 3000 })
+
+    const response = await graphqlRequest(router, query)
+    console.log(response)
+  })
+
+  // TODO
+  // test with authorId and author { id }
+  // compose entity query with fields selection
+  // when an entity is spread across multiple subgraphs
+
+  // ? should throw error (timeout?) resolving type entity?
+  // TODO entity resolver does not return a list by schema - not at runtime
+  /*
+*/
 })
