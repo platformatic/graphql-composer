@@ -21,7 +21,7 @@ async function startRouter (t, subgraphs, overrides = {}, extend) {
 
     t.after(async () => {
       try {
-        // await server.close()
+        await server.close()
       } catch {} // Ignore errors.
     })
 
