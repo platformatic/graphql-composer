@@ -602,6 +602,4 @@ test('entities', async () => {
 
   // ? should throw error (timeout?) resolving type entity?
   // TODO entity resolver does not return a list by schema - not at runtime
-  /*
-*/
 })

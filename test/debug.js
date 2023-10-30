@@ -59,27 +59,24 @@ const services = {
           id: 1,
           name: {
             firstName: 'Peter',
-            lastName: 'Pluck'
+            lastName: 'Dreamer'
           }
         },
         2: {
           id: 2,
           name: {
             firstName: 'John',
-            lastName: 'Writer'
+            lastName: 'Reporter'
           }
         }
       }
     },
     schema: `
-      input In {
+      input IdsIn {
         in: [ID]!
       }
-      input IdsIn {
-        ids: In
-      }
       input WhereIdsIn {
-        where: IdsIn
+        ids: IdsIn
       }
 
       type AuthorName {
@@ -102,7 +99,15 @@ const services = {
       Query: {
         get: (_, { id }) => services.authors.data.authors[id],
         list: () => services.authors.data.authors,
-        authors: (_, args) => Object.values(services.authors.data.authors).filter(a => args.where.ids.in.includes(a.id))
+        authors: (_, args) => {
+          const authors = Object.values(services.authors.data.authors)
+            .filter(a => args.where.ids.in.includes(String(a.id)))
+
+          // rotate by 1
+          authors.unshift(authors.pop())
+
+          return authors
+        }
       }
     },
     entities: {
@@ -111,7 +116,8 @@ const services = {
         referenceListResolverName: 'authors',
         args: (partialResults) => {
           console.log(' ******** authors.entities.Author args fn', partialResults)
-          return { where: { ids: { in: partialResults.map(r => r.author.id) } } }
+          // TODO can return a string? template?
+          return { where: { ids: { in: partialResults.map(r => r.id) } } }
         }
       }
     }
@@ -130,7 +136,7 @@ const services = {
           id: 2,
           title: 'A Book About Things That Really Happened',
           genre: 'NONFICTION',
-          authorId: 3
+          authorId: 2
         },
         3: {
           id: 3,
@@ -304,6 +310,8 @@ const services = {
   }
 }
 
+// TODO test with/without author
+
 async function test () {
   const router = await startRouter(services, { port: PORT })
 
@@ -311,6 +319,9 @@ async function test () {
   query {
     getReviewBookByIds(bookIds: [1,2,3]) {
       title
+      author {
+        name { lastName }
+      }
       reviews {
         rating
       }
@@ -319,7 +330,12 @@ async function test () {
   `
 
   const response = await graphqlRequest(router, query)
-  console.log(response)
+
+  console.log('==========')
+  console.log(query)
+  console.log('TADAAAAN')
+  console.log(JSON.stringify(response, null, 2))
+  console.log('==========')
 }
 
 async function main () {
