@@ -110,11 +110,12 @@ async function main() {
             // Resolver for retrieving multiple Books.
             referenceListResolverName: 'getBooksByIds',
             // Field(s) necessary to identify any individual Book object and related types.
-            keys: [{ field: 'id', type: 'Book' }], TODO update
+            keys: [{ field: 'id', type: 'Book' }], TODO example with author.id
             // A function to map a partial result from another subgraph(s) to
             // the key fields.
             args (partialResults) {
               // TODO update
+              // TODO return a string? to avoid serialization
             }
           }
         },

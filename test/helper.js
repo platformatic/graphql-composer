@@ -55,7 +55,7 @@ async function startRouter (t, subgraphs, overrides = {}, extend) {
 
     const host = await server.listen()
 
-    console.log(subgraph, host)
+    // console.log(subgraph, host)
 
     return {
       name,
@@ -95,6 +95,11 @@ async function startRouter (t, subgraphs, overrides = {}, extend) {
   }
   const composer = await compose(routerConfig)
   const router = Fastify()
+  t.after(async () => {
+    try {
+      await router.close()
+    } catch {} // Ignore errors.
+  })
 
   router.register(Mercurius, {
     schema: composer.toSdl(),

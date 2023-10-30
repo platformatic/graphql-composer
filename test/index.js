@@ -483,20 +483,44 @@ test('entities', async () => {
   })
 
   await test('resolve foreign types by picking up keys', async (t) => {
+    const query = `{
+      getReviewBookByIds(ids: [1,2,3]) {
+        title
+        author { name { lastName } }
+        reviews { rating }
+      }
+    }`
+
+    const expectedResponse = {
+      getReviewBookByIds:
+      [{
+        title: 'A Book About Things That Never Happened',
+        author: { name: { lastName: 'Pluck' } },
+        reviews: [{ rating: 2 }]
+      },
+      {
+        title: 'A Book About Things That Really Happened',
+        author: { name: { lastName: 'Writer' } },
+        reviews: [{ rating: 3 }]
+      },
+      {
+        title: 'Uknown memories',
+        author: { name: null },
+        reviews: [{ rating: 3 }, { rating: 5 }, { rating: 1 }]
+      }]
+    }
+
     const extend = {
       'authors-subgraph': (data) => {
         return {
           schema: `
-          input In {
+          input IdsIn {
             in: [ID]!
           }
-          input IdsIn {
-            ids: In
-          }
           input WhereIdsIn {
-            where: IdsIn
+            ids: IdsIn
           }
-
+   
           extend type Query {
             authors (where: WhereIdsIn): [Author]
           }
@@ -505,7 +529,7 @@ test('entities', async () => {
             Query: {
               authors: (_, args) => {
                 const ids = args.where.ids.in
-                return Object.values(data.authors).filter(a => ids.includes(a.id))
+                return Object.values(data.authors).filter(a => ids.includes(String(a.id)))
               }
             }
           }
@@ -534,7 +558,6 @@ test('entities', async () => {
           resolvers: {
             Book: {
               author: (parent) => {
-                console.log('Author resolver', parent)
                 return { id: parent.authorId || data.library[parent.id]?.authorId }
               }
             }
@@ -542,16 +565,12 @@ test('entities', async () => {
         }
       }
     }
-
     const overrides = {
       subgraphs: {
         'books-subgraph': {
           entities: {
             Book: {
               referenceListResolverName: 'getBooksByIds',
-              // fiels of Book to identy entites
-              // pick up keys if entity is in selection fields
-              // TODO doc, example with author.id
               keys: [{ field: 'id', type: 'Book' }, { field: 'author.id', type: 'Author' }],
               args (partialResults) {
                 return { id: partialResults.map(r => r.id) }
@@ -565,7 +584,6 @@ test('entities', async () => {
               referenceListResolverName: 'authors',
               keys: [{ field: 'id', type: 'Author' }],
               args (partialResults) {
-                console.log(' ******** authors args', partialResults)
                 return { where: { ids: { in: partialResults.map(r => r.id) } } }
               }
             }
@@ -573,26 +591,12 @@ test('entities', async () => {
         }
       }
     }
-
     const router = await startRouter(t, ['authors-subgraph', 'books-subgraph', 'reviews-subgraph'], overrides, extend)
-    const query = `
-    query {
-      getReviewBookByIds(ids: [1,2,3]) {
-        title
-        author {
-          name { lastName }
-        }
-        reviews {
-          rating
-        }
-      }
-    }
-    `
-
-    await router.listen({ port: 3000 })
+    await router.listen()
 
     const response = await graphqlRequest(router, query)
-    console.log(response)
+
+    deepStrictEqual(response, expectedResponse)
   })
 
   // TODO
