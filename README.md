@@ -39,9 +39,14 @@ type Review {
   content: String!
 }
 
+type Author {
+  id: ID!
+}
+
 type Book {
   id: ID!
   reviews: [Review]!
+  author: Author
 }
 
 type ReviewWithBook {
@@ -78,6 +83,9 @@ type Book {
   title: String
   genre: BookGenre
 
+  # nested types
+  author: Author
+
   # Fields from the Reviews subgraph.
   reviews: [Review]!
 }
@@ -109,12 +117,11 @@ async function main() {
             // Resolver for retrieving multiple Books.
             referenceListResolverName: 'getBooksByIds',
             // Field(s) necessary to identify any individual Book object and related types.
-            keys: [{ field: 'id', type: 'Book' }], TODO example with author.id
+            keys: [{ field: 'id' }, { field: 'author.id', type: 'Author' }],
             // A function to map a partial result from another subgraph(s) to
             // the key fields.
-            argsAdapter (partialResults) {
-              // TODO update
-              // TODO return a string? to avoid serialization
+            argsAdapter: (partialResults) => {
+              return { ids: partialResults.map(r => r.id) }
             }
           }
         },
@@ -174,12 +181,10 @@ main()
           - `host` (string, required) - The host information to connect to.
           - `composeEndpoint` (string, optional) - The endpoint to retrieve the introspection query from. **Default:** `'/.well-known/graphql-composition'`. In case the endpoint is not available, a second call with introspection query will be sent to the `graphqlEndpoint`.
           - `graphqlEndpoint` (string, optional) - The endpoint to make GraphQL queries against. **Default:** `'/graphql'`.
-        - `entities` (object, optional) - Configuration object for working with entities in this subgraph. Each key in this object is the name of an entity data type. This is required if the subgraph contains any entities. The values are objects with the the following schema:
-          - `referenceListResolverName` (string, required) - The name of the resolver used to retrieve a list of objects by their keys.
-          - `keys` (array of strings, required) - TODO The fields used to uniquely identify objects of this type.
-          ! constraint: need to list all entities ids (can use a default?)
-          - `argsAdapter (partialResults)` (function, optional) - TODO
-           When resolving an entity across multiple subgraphs, an initial query is made to one subgraph followed by one or more followup queries to other subgraphs. The initial query must return enough information to identify the corresponding data in the other subgraphs. This function is invoked with the result of the initial query. It should return an array of objects whose keys correspond to the `keys` configuration.
+        - `entities` (object, optional) - Configuration object for working with entities in this subgraph. Each key in this object is the name of an entity data type. This is required if the subgraph contains any entities: all of them must be listed with their primary key. The values are objects with the the following schema:
+          - `referenceListResolverName` (string, optional) - The name of the resolver used to retrieve a list of objects by their keys. Can be optional if the entity doesn't have a resolver because its keys are nested in another entity (see the [example](./examples/with-transitional-keys.js)).
+          - `argsAdapter (partialResults)` (function, optional) - When resolving an entity across multiple subgraphs, an initial query is made to one subgraph followed by one or more followup queries to other subgraphs. The initial query must return enough information to identify the corresponding data in the other subgraphs. This function is invoked with the result of the initial query. It should return an object to be used as argument for `referenceListResolverName` query.
+          - `keys` (array of object, required) - The keys of the entity, to identify itself or refered to other entities. The key format is `[{ field, type }]`, for example `[{ field: 'id', type: 'Book' }]`. `type` can be omitted referring to the entity itself.
       - `onSubgraphError` (function, optional) - Hook called when an error occurs getting schema from a subgraph. The default function will throw the error. The arguments are:
           - `error` (error) - The error.
           - `subgraph` (object) - The erroring subgraph.
