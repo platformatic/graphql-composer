@@ -14,7 +14,7 @@ const schema = `
   type Query {
     getBook(id: ID!): Book
     getBookTitle(id: ID!): String
-    getBooksByIds(id: [ID]!): [Book]!
+    getBooksByIds(ids: [ID]!): [Book]!
   }
 `
 const data = { library: null }
@@ -44,15 +44,20 @@ const resolvers = {
     async getBookTitle (_, { id }) {
       return data.library[id]?.title
     },
-    async getBooksByIds (_, { id }) {
-      return id.map((id) => { return data.library[id] })
+    async getBooksByIds (_, { ids }) {
+      return ids.map((id) => { return data.library[id] })
     }
   }
 }
 const entities = {
   Book: {
     referenceListResolverName: 'getBooksByIds',
-    keys: [{ field: 'id', type: 'Book' }]
+    keys: [{ field: 'id', type: 'Book' }],
+    args (partialResults) {
+      return {
+        ids: partialResults?.map(r => r?.id)
+      }
+    }
   }
 }
 

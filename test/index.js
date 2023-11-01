@@ -446,7 +446,7 @@ test('entities', async () => {
         'books-subgraph': {
           entities: {
             Book: {
-              args (partialResults) {
+              args () {
                 return 'nope'
               }
             }
@@ -493,21 +493,21 @@ test('entities', async () => {
 
     const expectedResponse = {
       getReviewBookByIds:
-      [{
-        title: 'A Book About Things That Never Happened',
-        author: { name: { lastName: 'Pluck' } },
-        reviews: [{ rating: 2 }]
-      },
-      {
-        title: 'A Book About Things That Really Happened',
-        author: { name: { lastName: 'Writer' } },
-        reviews: [{ rating: 3 }]
-      },
-      {
-        title: 'Uknown memories',
-        author: { name: null },
-        reviews: [{ rating: 3 }, { rating: 5 }, { rating: 1 }]
-      }]
+        [{
+          title: 'A Book About Things That Never Happened',
+          author: { name: { lastName: 'Pluck' } },
+          reviews: [{ rating: 2 }]
+        },
+        {
+          title: 'A Book About Things That Really Happened',
+          author: { name: { lastName: 'Writer' } },
+          reviews: [{ rating: 3 }]
+        },
+        {
+          title: 'Uknown memories',
+          author: { name: null },
+          reviews: [{ rating: 3 }, { rating: 5 }, { rating: 1 }]
+        }]
     }
 
     const extend = {
@@ -567,7 +567,7 @@ test('entities', async () => {
             Book: {
               referenceListResolverName: 'getBooksByIds',
               keys: [{ field: 'id', type: 'Book' }, { field: 'author.id', type: 'Author' }],
-              args: (partialResults) => ({ id: partialResults.map(r => r.id) })
+              args: (partialResults) => ({ ids: partialResults.map(r => r.id) })
             }
           }
         },
@@ -600,18 +600,18 @@ test('entities', async () => {
 
     const expectedResponse = {
       getReviewBookByIds:
-      [{
-        title: 'A Book About Things That Never Happened',
-        reviews: [{ rating: 2 }]
-      },
-      {
-        title: 'A Book About Things That Really Happened',
-        reviews: [{ rating: 3 }]
-      },
-      {
-        title: 'Uknown memories',
-        reviews: [{ rating: 3 }, { rating: 5 }, { rating: 1 }]
-      }]
+        [{
+          title: 'A Book About Things That Never Happened',
+          reviews: [{ rating: 2 }]
+        },
+        {
+          title: 'A Book About Things That Really Happened',
+          reviews: [{ rating: 3 }]
+        },
+        {
+          title: 'Uknown memories',
+          reviews: [{ rating: 3 }, { rating: 5 }, { rating: 1 }]
+        }]
     }
 
     let calls = 0
@@ -678,7 +678,7 @@ test('entities', async () => {
             Book: {
               referenceListResolverName: 'getBooksByIds',
               keys: [{ field: 'id', type: 'Book' }, { field: 'author.id', type: 'Author' }],
-              args: (partialResults) => ({ id: partialResults.map(r => r.id) })
+              args: (partialResults) => ({ ids: partialResults.map(r => r.id) })
             }
           }
         },
@@ -705,7 +705,65 @@ test('entities', async () => {
     deepStrictEqual(response, expectedResponse)
   })
 
+  await test('should run the same query more than once, with different args', async (t) => {
+    const queries = [
+      `{
+        getReviewBookByIds(ids: [1]) {
+          title
+          reviews { rating }
+        }
+      }`,
+      `{
+        getReviewBookByIds(ids: [2]) {
+          title
+          reviews { rating }
+        }
+      }`
+    ]
+
+    const expectedResponses = [{
+      getReviewBookByIds: [{
+        reviews: [{ rating: 2 }],
+        title: 'A Book About Things That Never Happened'
+      }]
+    },
+    {
+      getReviewBookByIds: [{
+        reviews: [{ rating: 3 }],
+        title: 'A Book About Things That Really Happened'
+      }]
+    }]
+
+    const router = await startRouter(t, ['books-subgraph', 'reviews-subgraph'])
+
+    for (let i = 0; i < queries.length; i++) {
+      const response = await graphqlRequest(router, queries[i])
+      deepStrictEqual(response, expectedResponses[i])
+    }
+  })
+
+  await test('should handle null results', async (t) => {
+    const query =
+      `{
+        getReviewBookByIds(ids: [101,99,42]) {
+          title
+          reviews { rating }
+        }
+      }`
+
+    const expectedResponse = {
+      getReviewBookByIds: []
+    }
+
+    const router = await startRouter(t, ['books-subgraph', 'reviews-subgraph'])
+
+    const response = await graphqlRequest(router, query)
+    deepStrictEqual(response, expectedResponse)
+  })
+
+  // TODO with/without list results, nulls
   // TODO when an entity is spread across multiple subgraphs
   // TODO on runtime error (args fn throws, resolver throws)
   // TODO should throw error (timeout?) resolving type entity
+  // TODO nested repeated "followup"
 })
