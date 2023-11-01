@@ -478,7 +478,7 @@ test('entities', async () => {
     })
   })
 
-  await test('resolve foreign types with transitional nested keys', async (t) => {
+  await test('resolve foreign types with nested keys', async (t) => {
     const query = `{
       getReviewBookByIds(ids: [1,2,3]) {
         title
