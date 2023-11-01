@@ -94,21 +94,23 @@ const resolvers = {
       return reviews[id]
     },
     async getReviewBook (_, { id }) {
+      if (!books[id]) { return }
       const book = structuredClone(books[id])
 
-      book.reviews = book.reviews.map((rid) => {
+      book.reviews = book?.reviews.map((rid) => {
         return reviews[rid]
       })
 
       return book
     },
     async getReviewsByBookId (_, { id }) {
-      return books[id].reviews.map((rid) => {
+      return books?.[id].reviews.map((rid) => {
         return reviews[rid]
       })
     },
     async getReviewBookByIds (_, { ids }) {
       return ids.map((id) => {
+        if (!books[id]) { return null }
         const book = structuredClone(books[id])
 
         book.reviews = book.reviews.map((rid) => {
@@ -161,7 +163,7 @@ const entities = {
     keys: [{ field: 'id', type: 'Book' }],
     args (partialResults) {
       return {
-        ids: partialResults.map(r => r.id)
+        ids: partialResults?.map(r => r?.id)
       }
     }
   }

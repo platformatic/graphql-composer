@@ -9,14 +9,16 @@ const fixturesDir = join(__dirname, '..', 'fixtures')
 
 async function startRouter (t, subgraphs, overrides = {}, extend) {
   const promises = subgraphs.map(async (subgraph) => {
-    let {
+    const subgraphFile = join(fixturesDir, subgraph)
+    delete require.cache[require.resolve(subgraphFile)]
+    const {
       name,
       entities = {},
       reset,
       resolvers,
       schema,
       data
-    } = require(join(fixturesDir, subgraph))
+    } = require(subgraphFile)
     const server = Fastify()
 
     t.after(async () => {
@@ -30,7 +32,6 @@ async function startRouter (t, subgraphs, overrides = {}, extend) {
     const subgraphOverrides = overrides?.subgraphs?.[subgraph]
 
     if (subgraphOverrides) {
-      entities = structuredClone(entities)
       if (subgraphOverrides.entities) {
         for (const [k, v] of Object.entries(subgraphOverrides.entities)) {
           entities[k] = { ...entities[k], ...v }

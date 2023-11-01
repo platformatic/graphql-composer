@@ -20,8 +20,7 @@ type Book {
 
 type Query {
   getBook(id: ID!): Book
-  // TODO >>> ids
-  getBooksByIds(id: [ID]!): [Book]!
+  getBooksByIds(ids: [ID]!): [Book]!
 }
 ```
 
@@ -178,6 +177,7 @@ main()
         - `entities` (object, optional) - Configuration object for working with entities in this subgraph. Each key in this object is the name of an entity data type. This is required if the subgraph contains any entities. The values are objects with the the following schema:
           - `referenceListResolverName` (string, required) - The name of the resolver used to retrieve a list of objects by their keys.
           - `keys` (array of strings, required) - TODO The fields used to uniquely identify objects of this type.
+          ! constraint: need to list all entities ids (can use a default?)
           - `args (partialResults)` (function, optional) - TODO
            When resolving an entity across multiple subgraphs, an initial query is made to one subgraph followed by one or more followup queries to other subgraphs. The initial query must return enough information to identify the corresponding data in the other subgraphs. This function is invoked with the result of the initial query. It should return an array of objects whose keys correspond to the `keys` configuration.
       - `onSubgraphError` (function, optional) - Hook called when an error occurs getting schema from a subgraph. The default function will throw the error. The arguments are:
