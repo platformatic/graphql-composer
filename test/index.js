@@ -482,7 +482,7 @@ test('entities', async () => {
     })
   })
 
-  await test('resolve foreign types by picking up transitional nested keys', async (t) => {
+  await test('resolve foreign types with transitional nested keys', async (t) => {
     const query = `{
       getReviewBookByIds(ids: [1,2,3]) {
         title
@@ -566,8 +566,8 @@ test('entities', async () => {
           entities: {
             Book: {
               referenceListResolverName: 'getBooksByIds',
-              keys: [{ field: 'id', type: 'Book' }, { field: 'author.id', type: 'Author' }],
-              args: (partialResults) => ({ ids: partialResults.map(r => r.id) })
+              args: (partialResults) => ({ ids: partialResults.map(r => r.id) }),
+              keys: [{ field: 'id', type: 'Book' }, { field: 'author.id', type: 'Author' }]
             }
           }
         },
@@ -575,8 +575,8 @@ test('entities', async () => {
           entities: {
             Author: {
               referenceListResolverName: 'authors',
-              keys: [{ field: 'id', type: 'Author' }],
-              args: (partialResults) => ({ where: { ids: { in: partialResults.map(r => r.id) } } })
+              args: (partialResults) => ({ where: { ids: { in: partialResults.map(r => r.id) } } }),
+              keys: [{ field: 'id', type: 'Author' }]
             }
           }
         }
@@ -742,10 +742,32 @@ test('entities', async () => {
     }
   })
 
+  await test('should handle null in results', async (t) => {
+    const query =
+      `{
+        getReviewBookByIds(ids: [99,1,101]) {
+          title
+          reviews { rating }
+        }
+      }`
+
+    const expectedResponse = {
+      getReviewBookByIds: [{
+        reviews: [{ rating: 2 }],
+        title: 'A Book About Things That Never Happened'
+      }]
+    }
+
+    const router = await startRouter(t, ['books-subgraph', 'reviews-subgraph'])
+
+    const response = await graphqlRequest(router, query)
+    deepStrictEqual(response, expectedResponse)
+  })
+
   await test('should handle null results', async (t) => {
     const query =
       `{
-        getReviewBookByIds(ids: [101,99,42]) {
+        getReviewBookByIds(ids: [-1,-2,-3]) {
           title
           reviews { rating }
         }
@@ -760,6 +782,9 @@ test('entities', async () => {
     const response = await graphqlRequest(router, query)
     deepStrictEqual(response, expectedResponse)
   })
+
+  // keys: optional type when refered to self
+  // missing entity and/or key, use default from options (doc: [{field:'id'}])
 
   // TODO with/without list results, nulls
   // TODO when an entity is spread across multiple subgraphs

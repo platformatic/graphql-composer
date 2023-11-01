@@ -112,7 +112,7 @@ const services = {
     },
     entities: {
       Author: {
-        keys: [{ field: 'id', type: 'Author' }],
+        keys: [{ field: 'id' }],
         referenceListResolverName: 'authors',
         args: (partialResults) => {
           console.log(' ******** authors.entities.Author args fn', partialResults)

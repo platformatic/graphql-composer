@@ -118,14 +118,11 @@ const services = {
     entities: {
       Book: {
         referenceListResolverName: 'getBooksByIds',
-        keys: [{ field: 'id', type: 'Book' }, { field: 'author.id', type: 'Author' }],
+        keys: [{ field: 'id' }, { field: 'author.id', type: 'Author' }],
         args: (partialResults) => {
           console.log(' ******** books.entities.Book args fn', partialResults)
           return { ids: partialResults.map(r => r?.bookId) }
         }
-      },
-      Author: {
-        keys: [{ field: 'id', type: 'Author' }]
       }
     }
   },
@@ -238,9 +235,6 @@ const services = {
         }
         // all the above will be compose to getReviewBookByIds(bookIds: [$mappedIdsFromPartialResults]) { bookId }
         // to retrieve Book
-      },
-      Review: {
-        keys: [{ field: 'id', type: 'Review' }]
       }
     }
   }
@@ -252,7 +246,7 @@ async function test () {
   const router = await startRouter(services, { port: PORT })
 
   const query = `{
-    getReviewBookByIds(bookIds: [99, 1]) {
+    getReviewBookByIds(bookIds: [1111]) {
       title
       reviews { rating }
     }
