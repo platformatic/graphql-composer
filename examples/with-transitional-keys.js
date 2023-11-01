@@ -213,7 +213,7 @@ const services = {
     entities: {
       Book: {
         referenceListResolverName: 'getBooksByIds',
-        keys: [{ field: 'id', type: 'Book' }, { field: 'author.id', type: 'Author' }],
+        keys: [{ field: 'id' }, { field: 'author.id', type: 'Author' }],
         argsAdapter: (partialResults) => {
           return { ids: partialResults.map(r => r.bookId) }
         }
