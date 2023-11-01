@@ -114,8 +114,8 @@ const services = {
       Author: {
         keys: [{ field: 'id' }],
         referenceListResolverName: 'authors',
-        args: (partialResults) => {
-          console.log(' ******** authors.entities.Author args fn', partialResults)
+        argsAdapter: (partialResults) => {
+          console.log(' ******** authors.entities.Author argsAdapter fn', partialResults)
           return { where: { ids: { in: partialResults.map(r => r.id) } } }
         }
       }
@@ -189,8 +189,8 @@ const services = {
       Book: {
         referenceListResolverName: 'getBooksByIds',
         keys: [{ field: 'id', type: 'Book' }, { field: 'author.id', type: 'Author' }],
-        args: (partialResults) => {
-          console.log(' ******** books.entities.Book args fn', partialResults)
+        argsAdapter: (partialResults) => {
+          console.log(' ******** books.entities.Book argsAdapter fn', partialResults)
           return { ids: partialResults.map(r => r.bookId) }
         }
       }
@@ -295,8 +295,8 @@ const services = {
       Book: {
         referenceListResolverName: 'getReviewBookByIds', // query to resolve entity
         keys: [{ field: 'bookId', type: 'Book' }], // keys to retrieve from entity resolver query
-        args: (partialResults) => { // when results come from this subgraph
-          console.log(' ******** reviews.entities.Book args fn', partialResults)
+        argsAdapter: (partialResults) => { // when results come from this subgraph
+          console.log(' ******** reviews.entities.Book argsAdapter fn', partialResults)
           return { bookIds: partialResults.map(r => r.bookId) }
         }
         // all the above will be compose to getReviewBookByIds(bookIds: [$mappedIdsFromPartialResults]) { bookId }
@@ -305,8 +305,6 @@ const services = {
     }
   }
 }
-
-// TODO test with/without author
 
 async function test () {
   const router = await startRouter(services, { port: PORT })

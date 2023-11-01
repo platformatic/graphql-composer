@@ -112,7 +112,7 @@ async function main() {
             keys: [{ field: 'id', type: 'Book' }], TODO example with author.id
             // A function to map a partial result from another subgraph(s) to
             // the key fields.
-            args (partialResults) {
+            argsAdapter (partialResults) {
               // TODO update
               // TODO return a string? to avoid serialization
             }
@@ -178,7 +178,7 @@ main()
           - `referenceListResolverName` (string, required) - The name of the resolver used to retrieve a list of objects by their keys.
           - `keys` (array of strings, required) - TODO The fields used to uniquely identify objects of this type.
           ! constraint: need to list all entities ids (can use a default?)
-          - `args (partialResults)` (function, optional) - TODO
+          - `argsAdapter (partialResults)` (function, optional) - TODO
            When resolving an entity across multiple subgraphs, an initial query is made to one subgraph followed by one or more followup queries to other subgraphs. The initial query must return enough information to identify the corresponding data in the other subgraphs. This function is invoked with the result of the initial query. It should return an array of objects whose keys correspond to the `keys` configuration.
       - `onSubgraphError` (function, optional) - Hook called when an error occurs getting schema from a subgraph. The default function will throw the error. The arguments are:
           - `error` (error) - The error.
