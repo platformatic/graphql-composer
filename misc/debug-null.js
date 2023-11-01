@@ -119,8 +119,8 @@ const services = {
       Book: {
         referenceListResolverName: 'getBooksByIds',
         keys: [{ field: 'id' }, { field: 'author.id', type: 'Author' }],
-        args: (partialResults) => {
-          console.log(' ******** books.entities.Book args fn', partialResults)
+        argsAdapter: (partialResults) => {
+          console.log(' ******** books.entities.Book argsAdapter fn', partialResults)
           return { ids: partialResults.map(r => r?.bookId) }
         }
       }
@@ -229,8 +229,8 @@ const services = {
       Book: {
         referenceListResolverName: 'getReviewBookByIds', // query to resolve entity
         keys: [{ field: 'bookId', type: 'Book' }], // keys to retrieve from entity resolver query
-        args: (partialResults) => { // when results come from this subgraph
-          console.log(' ******** reviews.entities.Book args fn', partialResults)
+        argsAdapter: (partialResults) => { // when results come from this subgraph
+          console.log(' ******** reviews.entities.Book argsAdapter fn', partialResults)
           return { bookIds: partialResults.map(r => r.bookId) }
         }
         // all the above will be compose to getReviewBookByIds(bookIds: [$mappedIdsFromPartialResults]) { bookId }
@@ -240,27 +240,34 @@ const services = {
   }
 }
 
-// TODO test with/without author
-
 async function test () {
   const router = await startRouter(services, { port: PORT })
 
-  const query = `{
+  const queries = [
+  `{
     getReviewBookByIds(bookIds: [1111]) {
       title
       reviews { rating }
     }
+  }`,
+  `{
+    getReviewBookByIds(bookIds: [1111]) {
+      title
+      author { name { lastName, firstName } }
+      reviews { rating }
+    }
   }`
+  ]
 
-  // TODO add author name
+  for (const query of queries) {
+    const response = await graphqlRequest(router, query)
 
-  const response = await graphqlRequest(router, query)
-
-  console.log('==========')
-  console.log(query)
-  console.log('TADAAAAN')
-  console.log(JSON.stringify(response, null, 2))
-  console.log('==========')
+    console.log('==========')
+    console.log(query)
+    console.log('TADAAAAN')
+    console.log(JSON.stringify(response, null, 2))
+    console.log('==========')
+  }
 }
 
 async function main () {

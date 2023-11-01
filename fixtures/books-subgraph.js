@@ -53,7 +53,7 @@ const entities = {
   Book: {
     referenceListResolverName: 'getBooksByIds',
     keys: [{ field: 'id', type: 'Book' }],
-    args (partialResults) {
+    argsAdapter (partialResults) {
       return {
         ids: partialResults?.map(r => r?.id)
       }

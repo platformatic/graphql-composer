@@ -440,16 +440,12 @@ test('Mutations', async () => {
 })
 
 test('entities', async () => {
-  await test('throws if args function does not return an array of objects', async (t) => {
+  await test('throws if argsAdapter function does not return an array of objects', async (t) => {
     const overrides = {
       subgraphs: {
         'books-subgraph': {
           entities: {
-            Book: {
-              args () {
-                return 'nope'
-              }
-            }
+            Book: { argsAdapter: () => 'nope' }
           }
         }
       }
@@ -476,7 +472,7 @@ test('entities', async () => {
     }, (err) => {
       strictEqual(Array.isArray(err), true)
       strictEqual(err.length, 1)
-      strictEqual(err[0].message, 'args function did not return an object. returned nope.')
+      strictEqual(err[0].message, 'argsAdapter did not return an object. returned nope.')
       deepStrictEqual(err[0].path, ['getReviewBook'])
       return true
     })
@@ -566,7 +562,7 @@ test('entities', async () => {
           entities: {
             Book: {
               referenceListResolverName: 'getBooksByIds',
-              args: (partialResults) => ({ ids: partialResults.map(r => r.id) }),
+              argsAdapter: (partialResults) => ({ ids: partialResults.map(r => r.id) }),
               keys: [{ field: 'id', type: 'Book' }, { field: 'author.id', type: 'Author' }]
             }
           }
@@ -575,7 +571,7 @@ test('entities', async () => {
           entities: {
             Author: {
               referenceListResolverName: 'authors',
-              args: (partialResults) => ({ where: { ids: { in: partialResults.map(r => r.id) } } }),
+              argsAdapter: (partialResults) => ({ where: { ids: { in: partialResults.map(r => r.id) } } }),
               keys: [{ field: 'id', type: 'Author' }]
             }
           }
@@ -678,7 +674,7 @@ test('entities', async () => {
             Book: {
               referenceListResolverName: 'getBooksByIds',
               keys: [{ field: 'id', type: 'Book' }, { field: 'author.id', type: 'Author' }],
-              args: (partialResults) => ({ ids: partialResults.map(r => r.id) })
+              argsAdapter: (partialResults) => ({ ids: partialResults.map(r => r.id) })
             }
           }
         },
@@ -687,7 +683,7 @@ test('entities', async () => {
             Author: {
               referenceListResolverName: 'authors',
               keys: [{ field: 'id', type: 'Author' }],
-              args: () => {
+              argsAdapter: () => {
                 calls++
                 return []
               }
@@ -705,7 +701,7 @@ test('entities', async () => {
     deepStrictEqual(response, expectedResponse)
   })
 
-  await test('should run the same query more than once, with different args', async (t) => {
+  await test('should run the same query with different args', async (t) => {
     const queries = [
       `{
         getReviewBookByIds(ids: [1]) {
@@ -784,11 +780,10 @@ test('entities', async () => {
   })
 
   // keys: optional type when refered to self
-  // missing entity and/or key, use default from options (doc: [{field:'id'}])
 
-  // TODO with/without list results, nulls
+  // TODO results: list, single, nulls, partials
   // TODO when an entity is spread across multiple subgraphs
-  // TODO on runtime error (args fn throws, resolver throws)
+  // TODO on runtime error (argsAdapter fn throws, resolver throws)
   // TODO should throw error (timeout?) resolving type entity
   // TODO nested repeated "followup"
 })

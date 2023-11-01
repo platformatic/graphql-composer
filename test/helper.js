@@ -56,8 +56,6 @@ async function startRouter (t, subgraphs, overrides = {}, extend) {
 
     const host = await server.listen()
 
-    // console.log(subgraph, host)
-
     return {
       name,
       entities,
