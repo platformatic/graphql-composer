@@ -94,17 +94,17 @@ const resolvers = {
       return reviews[id]
     },
     async getReviewBook (_, { id }) {
-      if (!books[id]) { return }
+      if (!books[id]) { return null }
       const book = structuredClone(books[id])
 
-      book.reviews = book?.reviews.map((rid) => {
+      book.reviews = book.reviews.map((rid) => {
         return reviews[rid]
       })
 
       return book
     },
     async getReviewsByBookId (_, { id }) {
-      return books?.[id].reviews.map((rid) => {
+      return books[id]?.reviews.map((rid) => {
         return reviews[rid]
       })
     },

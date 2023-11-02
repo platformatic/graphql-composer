@@ -1,5 +1,5 @@
 'use strict'
-const { deepStrictEqual, rejects, strictEqual, deepEqual } = require('node:assert')
+const { deepStrictEqual, rejects, strictEqual } = require('node:assert')
 const { test } = require('node:test')
 const { graphqlRequest, startRouter } = require('./helper')
 
@@ -697,7 +697,7 @@ test('entities', async () => {
 
     const response = await graphqlRequest(router, query)
 
-    deepEqual(calls, 0)
+    strictEqual(calls, 0)
     deepStrictEqual(response, expectedResponse)
   })
 
