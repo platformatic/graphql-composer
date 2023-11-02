@@ -3,7 +3,7 @@ const assert = require('node:assert')
 const { test } = require('node:test')
 
 const { compose } = require('../lib')
-const { startGraphqlService, graphqlRequest } = require('./helper')
+const { startGraphqlService, graphqlRequest, startRouter } = require('./helper')
 
 test('should build a service using composer without subscriptions', async (t) => {
   let calls = 0
@@ -54,4 +54,60 @@ test('should get error when onSubgraphError is not a function', async (t) => {
     name: 'TypeError',
     message: 'onSubgraphError must be a function'
   })
+})
+
+test('should use the defaultArgsAdapter provided in options', async (t) => {
+  const query = '{ getReviewBook(id: 1) { title } }'
+  const expectedResponse = { getReviewBook: { title: 'A Book About Things That Never Happened' } }
+
+  let calls = 0
+  const overrides = {
+    defaultArgsAdapter: (partialResults) => {
+      calls++
+      return { ids: partialResults.map(r => r.id) }
+    },
+    subgraphs: {
+      'books-subgraph': {
+        entities: {
+          Book: {
+            referenceListResolverName: 'getBooksByIds',
+            keys: [{ field: 'id', type: 'Book' }],
+            argsAdapter: undefined
+          }
+        }
+      }
+    }
+  }
+
+  const router = await startRouter(t, ['books-subgraph', 'reviews-subgraph'], overrides)
+
+  const response = await graphqlRequest(router, query)
+
+  assert.deepEqual(calls, 1)
+  assert.deepStrictEqual(response, expectedResponse)
+})
+
+test('should use the generic argsAdapter if not provided', async (t) => {
+  const query = '{ getReviewBook(id: 1) { title } }'
+  const expectedResponse = { getReviewBook: { title: 'A Book About Things That Never Happened' } }
+
+  const overrides = {
+    subgraphs: {
+      'books-subgraph': {
+        entities: {
+          Book: {
+            referenceListResolverName: 'getBooksByIds',
+            keys: [{ field: 'id', type: 'Book' }],
+            argsAdapter: undefined
+          }
+        }
+      }
+    }
+  }
+
+  const router = await startRouter(t, ['books-subgraph', 'reviews-subgraph'], overrides)
+
+  const response = await graphqlRequest(router, query)
+
+  assert.deepStrictEqual(response, expectedResponse)
 })

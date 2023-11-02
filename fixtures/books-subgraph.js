@@ -55,7 +55,7 @@ const entities = {
     keys: [{ field: 'id', type: 'Book' }],
     argsAdapter (partialResults) {
       return {
-        ids: partialResults?.map(r => r?.id)
+        ids: partialResults.map(r => r.id)
       }
     }
   }
