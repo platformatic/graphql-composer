@@ -83,7 +83,7 @@ test('should use the defaultArgsAdapter provided in options', async (t) => {
 
   const response = await graphqlRequest(router, query)
 
-  assert.deepEqual(calls, 1)
+  assert.strictEqual(calls, 1)
   assert.deepStrictEqual(response, expectedResponse)
 })
 

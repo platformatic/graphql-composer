@@ -23,7 +23,7 @@ async function startRouter (services, { port }) {
 
     service.host = await service.server.listen({ port: ++port })
 
-    console.log(name, service.host + '/graphiql')
+    console.log('graphql service', name, 'started, >>> ', service.host + '/graphiql')
 
     subgraphs.push({
       name,
@@ -376,7 +376,7 @@ async function main () {
   try {
     await test()
   } catch (err) {
-    console.dir(err, { depth: 99 })
+    console.dir(err, { depth: null })
   }
 }
 
