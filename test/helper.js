@@ -88,11 +88,12 @@ async function startRouter (t, subgraphs, overrides = {}, extend) {
       ctx.pubsub.close()
     }
   }
-  const routerConfig = {
+  const composerOptions = {
+    ...overrides,
     subgraphs: subgraphConfigs,
     subscriptions: { ...defaultSubscriptionHandler, ...overrides.subscriptions }
   }
-  const composer = await compose(routerConfig)
+  const composer = await compose(composerOptions)
   const router = Fastify()
   t.after(async () => {
     try {
