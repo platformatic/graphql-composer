@@ -9,10 +9,6 @@ const { graphqlRequest, startRouter } = require('./helper')
 test('simple subscription', async (t) => {
   const router = await startRouter(t, ['authors-subgraph'])
 
-  t.after(() => {
-    router.close()
-  })
-
   await router.listen()
   const wsUrl = `ws://localhost:${router.server.address().port}/graphql`
   const client = new SubscriptionClient(wsUrl, { serviceName: 'test' })
@@ -80,13 +76,8 @@ test('simple subscription', async (t) => {
   ])
 })
 
-// TODO fix
-test('subscription with followup queries', { skip: true }, async (t) => {
+test('subscription with followup queries', async (t) => {
   const router = await startRouter(t, ['books-subgraph', 'reviews-subgraph'])
-
-  t.after(() => {
-    router.close()
-  })
 
   await router.listen()
   const wsUrl = `ws://localhost:${router.server.address().port}/graphql`
@@ -152,8 +143,7 @@ test('subscription with followup queries', { skip: true }, async (t) => {
   })
 })
 
-// TODO fix
-test('subscription errors are propagated', { skip: true }, async (t) => {
+test('subscription errors are propagated', async (t) => {
   const overrides = {
     subscriptions: {
       onError (ctx, topic, error) {
@@ -166,10 +156,6 @@ test('subscription errors are propagated', { skip: true }, async (t) => {
   }
   const subgraphs = ['books-subgraph', 'reviews-subgraph']
   const router = await startRouter(t, subgraphs, overrides)
-
-  t.after(() => {
-    router.close()
-  })
 
   await router.listen()
   const wsUrl = `ws://localhost:${router.server.address().port}/graphql`
