@@ -440,7 +440,7 @@ test('Mutations', async () => {
 })
 
 test('entities', async () => {
-  await test('throws if argsAdapter function does not return an array of objects', async (t) => {
+  await test('throws if argsAdapter function does not return an object', async (t) => {
     const overrides = {
       subgraphs: {
         'books-subgraph': {
@@ -473,6 +473,40 @@ test('entities', async () => {
       strictEqual(Array.isArray(err), true)
       strictEqual(err.length, 1)
       strictEqual(err[0].message, 'argsAdapter did not return an object. returned nope.')
+      deepStrictEqual(err[0].path, ['getReviewBook'])
+      return true
+    })
+  })
+
+  await test('throws if argsAdapter function throws', async (t) => {
+    const overrides = {
+      subgraphs: {
+        'books-subgraph': {
+          entities: {
+            Book: {
+              referenceListResolverName: 'getBooksByIds',
+              argsAdapter: () => { throw new Error('boom') }
+            }
+          }
+        }
+      }
+    }
+
+    const router = await startRouter(t, ['books-subgraph', 'reviews-subgraph'], overrides)
+    const query = `
+    query {
+      getReviewBook(id: 1) {
+        title
+      }
+    }
+  `
+
+    await rejects(async () => {
+      await graphqlRequest(router, query)
+    }, (err) => {
+      strictEqual(Array.isArray(err), true)
+      strictEqual(err.length, 1)
+      strictEqual(err[0].message, 'Error running argsAdapter for getBooksByIds')
       deepStrictEqual(err[0].path, ['getReviewBook'])
       return true
     })
@@ -779,11 +813,8 @@ test('entities', async () => {
     deepStrictEqual(response, expectedResponse)
   })
 
-  // keys: optional type when refered to self
-
   // TODO results: list, single, nulls, partials
   // TODO when an entity is spread across multiple subgraphs
-  // TODO on runtime error (argsAdapter fn throws, resolver throws)
   // TODO should throw error (timeout?) resolving type entity
   // TODO nested repeated "followup"
 })
