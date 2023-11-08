@@ -1,0 +1,8 @@
+{
+  "exclude": [
+    "misc/*",
+    "examples/*",
+    "fixtures/*",
+    "test/*"
+  ]
+}
