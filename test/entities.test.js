@@ -689,7 +689,6 @@ test('entities', async () => {
 
       // nested and nested times
       {
-        only: 1,
         query: '{ artists (ids: ["103"]) { songs { singer { songs { singer { songs { title } }} } } } }',
         expected: { artists: [{ songs: [{ singer: { songs: [{ singer: { songs: [{ title: 'Every you every me' }, { title: 'The bitter end' }] } }, { singer: { songs: [{ title: 'Every you every me' }, { title: 'The bitter end' }] } }] } }, { singer: { songs: [{ singer: { songs: [{ title: 'Every you every me' }, { title: 'The bitter end' }] } }, { singer: { songs: [{ title: 'Every you every me' }, { title: 'The bitter end' }] } }] } }] }] }
       }
@@ -704,7 +703,6 @@ test('entities', async () => {
     const composer = await startRouter(t, ['artists-subgraph', 'movies-subgraph', 'songs-subgraph'], info)
 
     for (const request of requests) {
-      if (!request.only) { continue }
       const response = await graphqlRequest(composer, request.query, request.variables)
 
       assert.deepStrictEqual(response, request.expected, 'should get expected result from composer service for query\n' + request.query)
