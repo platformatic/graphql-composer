@@ -5,6 +5,7 @@ const Fastify = require('fastify')
 const { getIntrospectionQuery } = require('graphql')
 const Mercurius = require('mercurius')
 const { compose } = require('../lib')
+const assert = require('node:assert')
 const fixturesDir = join(__dirname, '..', 'fixtures')
 
 async function startRouter (t, subgraphs, overrides = {}, extend) {
@@ -39,7 +40,7 @@ async function startRouter (t, subgraphs, overrides = {}, extend) {
       }
     }
 
-    server.register(Mercurius, { schema, resolvers, graphiql: true, subscription: true })
+    server.register(Mercurius, { schema, resolvers, subscription: true })
     server.get('/.well-known/graphql-composition', async function (req, reply) {
       const introspectionQuery = getIntrospectionQuery()
 
@@ -104,7 +105,6 @@ async function startRouter (t, subgraphs, overrides = {}, extend) {
   router.register(Mercurius, {
     schema: composer.toSdl(),
     resolvers: composer.resolvers,
-    graphiql: true,
     subscription: true
   })
 
@@ -114,8 +114,53 @@ async function startRouter (t, subgraphs, overrides = {}, extend) {
   return router
 }
 
-async function graphqlRequest (router, query, variables) {
-  const response = await router.inject({
+async function buildComposer (t, subgraphs, options) {
+  const promises = subgraphs.map(async (subgraph) => {
+    const subgraphFile = join(fixturesDir, subgraph)
+    delete require.cache[require.resolve(subgraphFile)]
+    const {
+      name,
+      resolvers,
+      schema
+    } = require(subgraphFile)
+    const server = Fastify()
+    t.after(async () => { try { await server.close() } catch {} })
+
+    server.register(Mercurius, { schema, resolvers, graphiql: true })
+    server.get('/.well-known/graphql-composition', async function (req, reply) {
+      return reply.graphql(getIntrospectionQuery())
+    })
+
+    return {
+      name,
+      entities: options.entities[subgraph],
+      server: {
+        host: await server.listen(),
+        composeEndpoint: '/.well-known/graphql-composition',
+        graphqlEndpoint: '/graphql'
+      }
+    }
+  })
+
+  const composerOptions = {
+    ...options,
+    subgraphs: await Promise.all(promises)
+  }
+  const composer = await compose(composerOptions)
+  const service = Fastify()
+  t.after(async () => { try { await service.close() } catch {} })
+
+  service.register(Mercurius, {
+    schema: composer.toSdl(),
+    resolvers: composer.resolvers,
+    graphiql: true
+  })
+
+  return { composer, service }
+}
+
+async function graphqlRequest (app, query, variables) {
+  const response = await app.inject({
     path: '/graphql',
     method: 'POST',
     headers: {
@@ -155,4 +200,15 @@ async function startGraphqlService (t, { fastify, mercurius, exposeIntrospection
   return service
 }
 
-module.exports = { graphqlRequest, startRouter, startGraphqlService }
+function assertObject (actual, expected) {
+  for (const k of Object.keys(expected)) {
+    if (typeof expected[k] === 'function' && typeof actual[k] === 'function') { continue }
+    if (typeof expected === 'object') {
+      assertObject(actual[k], expected[k])
+      continue
+    }
+    assert.deepStrictEqual(actual[k], expected[k])
+  }
+}
+
+module.exports = { graphqlRequest, startRouter, buildComposer, startGraphqlService, assertObject }

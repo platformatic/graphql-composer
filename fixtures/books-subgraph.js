@@ -51,11 +51,13 @@ const resolvers = {
 }
 const entities = {
   Book: {
-    referenceListResolverName: 'getBooksByIds',
-    keys: [{ field: 'id', type: 'Book' }],
-    argsAdapter (partialResults) {
-      return {
-        ids: partialResults.map(r => r.id)
+    pkey: 'id',
+    resolver: {
+      name: 'getBooksByIds',
+      argsAdapter (partialResults) {
+        return {
+          ids: partialResults.map(r => r.id)
+        }
       }
     }
   }

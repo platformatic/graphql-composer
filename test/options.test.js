@@ -70,9 +70,11 @@ test('should use the defaultArgsAdapter provided in options', async (t) => {
       'books-subgraph': {
         entities: {
           Book: {
-            referenceListResolverName: 'getBooksByIds',
-            keys: [{ field: 'id', type: 'Book' }],
-            argsAdapter: undefined
+            pkey: 'id',
+            resolver: {
+              name: 'getBooksByIds',
+              argsAdapter: undefined
+            }
           }
         }
       }
@@ -96,9 +98,11 @@ test('should use the generic argsAdapter if not provided', async (t) => {
       'books-subgraph': {
         entities: {
           Book: {
-            referenceListResolverName: 'getBooksByIds',
-            keys: [{ field: 'id', type: 'Book' }],
-            argsAdapter: undefined
+            pkey: 'id',
+            resolver: {
+              name: 'getBooksByIds',
+              argsAdapter: undefined
+            }
           }
         }
       }
