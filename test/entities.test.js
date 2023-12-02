@@ -9,7 +9,7 @@ test('throws if argsAdapter function does not return an object', async (t) => {
     subgraphs: {
       'books-subgraph': {
         entities: {
-          Book: { resolver: { argsAdapter: () => 'nope' } }
+          Book: { resolver: { name: 'getBooksByIds', argsAdapter: () => 'nope' } }
         }
       }
     }
