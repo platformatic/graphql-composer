@@ -6,7 +6,7 @@
   "main": "lib/index.js",
   "author": "Colin J. Ihrig <cjihrig@gmail.com> (http://www.cjihrig.com/)",
   "scripts": {
-    "test": "npm run lint && c8 node test/runner.js",
+    "test": "npm run lint && c8 node --test test/runner.js",
     "lint": "standard | snazzy",
     "lint:fix": "standard --fix"
   },

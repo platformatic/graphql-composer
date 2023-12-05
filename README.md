@@ -193,13 +193,14 @@ main()
             - `field` (string, optional) - The foreign key field.
             - `as` (string, optional) - When using `addEntitiesResolvers`, it defines the name of the foreign entity as a field of the current one, as a single type.
             - `pkey` (string, optional) - The primary key of the foreign entity.
+            - `subgraph` (string, optional) - The subgraph name of the foreign entity, where the resolver is located; if missing is intended the self.
             - `resolver` (object, optional) - The resolver definition to query the foreing entity, same structure as `entity.resolver`.
           - `many` (array of objects, optional) - Describe a 1-to-many relation - the reverse of the foreign key.
             - `type` (string, required) - The entity type where the entity is a foreign key.
             - `fkey` (string, required) - The foreign key field in the referred entity.
             - `as` (string, required) - When using `addEntitiesResolvers`, it defines the name of the relation as a field of the current one, as a list.
             - `pkey` (string, optional) - The primary key of the referred entity.
-            - `subgraph` (string, required) - The subgraph name of the referred entity.
+            - `subgraph` (string, optional) - The subgraph name of the referred entity, where the resolver is located; if missing is intended the self.
             - `resolver` (object, required) - The resolver definition to query the referred entity, same structure as `entity.resolver`.
       - `onSubgraphError` (function, optional) - Hook called when an error occurs getting schema from a subgraph. The default function will throw the error. The arguments are:
           - `error` (error) - The error.
