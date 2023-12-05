@@ -1,6 +1,15 @@
 'use strict'
 
 const schema = `
+  input WhereConditionIn {
+    in: [ID!]!
+  }
+
+  input SongsWhereCondition {
+    id: WhereConditionIn
+    singerId: WhereConditionIn
+  } 
+
   type Song {
     id: ID!
     title: String
@@ -8,20 +17,7 @@ const schema = `
   }
 
   type Query {
-    songs(ids: [ID!]!): [Song]
-  }
-
-  type Artist {
-    id: ID
-    songs: [Song]
-  }
-
-  extend type Song {
-    singer: Artist
-  }
-
-  extend type Query {
-    songArtists (ids: [ID!]!): [Artist]
+    songs(where: SongsWhereCondition): [Song]
   }
 `
 
@@ -53,38 +49,14 @@ reset()
 
 const resolvers = {
   Query: {
-    async songs (_, { ids }) {
-      return Object.values(data.songs).filter(a => ids.includes(String(a.id)))
-    },
-    songArtists: async (parent, args, context, info) => {
-      return args.ids.map(id => ({ id }))
-    }
-  },
-  Song: {
-    singer: (parent, args, context, info) => {
-      return parent?.singerId ? { id: parent.singerId } : null
-    }
-  },
-  Artist: {
-    // TODO dataloader here
-    songs: (parent, args, context, info) => {
-      return Object.values(data.songs).filter(a => String(a.singerId) === String(parent.id))
+    async songs (_, { where }) {
+      const filter = where.id
+        ? (song) => where.id.in.includes(String(song.id))
+        : (song) => where.singerId.in.includes(String(song.singerId))
+      return Object.values(data.songs)
+        .filter(s => filter(s))
     }
   }
 }
 
-const entities = {
-  Song: {
-    referenceListResolverName: 'songs',
-    keys: [{ field: 'id' }, { field: 'singerId', type: 'Artist' }]
-  },
-  Artist: {
-    referenceListResolverName: 'songArtists',
-    argsAdapter: (partialResults) => {
-      return { ids: partialResults.map(r => r.id) }
-    },
-    keys: [{ field: 'id' }]
-  }
-}
-
-module.exports = { name: 'songs', schema, reset, resolvers, entities, data }
+module.exports = { name: 'songs-subgraph', schema, reset, resolvers, data }

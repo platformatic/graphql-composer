@@ -1,6 +1,14 @@
 'use strict'
 
 const schema = `
+  input WhereConditionIn {
+    in: [ID!]!
+  }
+
+  input ArtistsWhereCondition {
+    id: WhereConditionIn
+  } 
+
   type Artist {
     id: ID
     firstName: String
@@ -9,7 +17,7 @@ const schema = `
   }
 
   type Query {
-    artists(ids: [ID!]!): [Artist]
+    artists(where: ArtistsWhereCondition): [Artist]
   }
 `
 
@@ -44,17 +52,11 @@ reset()
 
 const resolvers = {
   Query: {
-    artists (_, { ids }) {
-      return Object.values(data.artists).filter(a => ids.includes(String(a.id)))
+    artists (_, { where }) {
+      return Object.values(data.artists)
+        .filter(a => where.id.in.includes(String(a.id)))
     }
   }
 }
 
-const entities = {
-  Artist: {
-    referenceListResolverName: 'artists',
-    keys: [{ field: 'id' }]
-  }
-}
-
-module.exports = { name: 'artists', schema, reset, resolvers, entities, data }
+module.exports = { name: 'artists-subgraph', schema, reset, resolvers, data }

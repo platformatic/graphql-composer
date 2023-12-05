@@ -6,20 +6,20 @@
   "main": "lib/index.js",
   "author": "Colin J. Ihrig <cjihrig@gmail.com> (http://www.cjihrig.com/)",
   "scripts": {
-    "test": "npm run lint && c8 node test/runner.js",
+    "test": "npm run lint && c8 node --test test/runner.js",
     "lint": "standard | snazzy",
     "lint:fix": "standard --fix"
   },
   "dependencies": {
     "@mercuriusjs/subscription-client": "^1.0.0",
+    "fastify": "^4.24.3",
     "graphql": "^16.8.1",
+    "mercurius": "^13.2.2",
     "undici": "^5.27.2"
   },
   "devDependencies": {
     "c8": "^8.0.1",
-    "fastify": "^4.24.3",
     "glob": "^10.3.10",
-    "mercurius": "^13.2.2",
     "snazzy": "^9.0.0",
     "standard": "^17.1.0"
   }

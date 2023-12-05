@@ -114,14 +114,13 @@ async function main() {
         entities: {
           // Configuration for working with Book entities in this subgraph.
           Book: {
+            pkey: 'id',
             // Resolver for retrieving multiple Books.
-            referenceListResolverName: 'getBooksByIds',
-            // Field(s) necessary to identify any individual Book object and related types.
-            keys: [{ field: 'id' }, { field: 'author.id', type: 'Author' }],
-            // A function to map a partial result from another subgraph(s) to
-            // the key fields.
-            argsAdapter: (partialResults) => {
-              return { ids: partialResults.map(r => r.id) }
+            resolver: {
+              name: 'getBooksByIds',
+              argsAdapter: (partialResults) => {
+                return { ids: partialResults.map(r => r.id) }
+              }
             }
           }
         },
@@ -177,15 +176,32 @@ main()
   - Arguments
     - `config` (object, optional) - A configuration object with the following schema.
       - `subgraphs` (array, optional) - Array of subgraph configuration objects with the following schema.
+        - `name` (string, optional) - A unique name to identify the subgraph; if missing the default one is `#${index}`, where index is the subgraph index in the array.
         - `server` (object, required) - Configuration object for communicating with the subgraph server with the following schema:
           - `host` (string, required) - The host information to connect to.
           - `composeEndpoint` (string, optional) - The endpoint to retrieve the introspection query from. **Default:** `'/.well-known/graphql-composition'`. In case the endpoint is not available, a second call with introspection query will be sent to the `graphqlEndpoint`.
           - `graphqlEndpoint` (string, optional) - The endpoint to make GraphQL queries against. **Default:** `'/graphql'`.
-        - `entities` (object, optional) - Configuration object for working with entities in this subgraph. Each key in this object is the name of an entity data type. This is required if the subgraph contains any entities. The values are objects with the the following schema:
-          - `referenceListResolverName` (string, optional) - The name of the resolver used to retrieve a list of objects by their keys. Can be optional if the entity doesn't have a resolver because its keys are nested in another entity (see the [example](./examples/with-nested-keys.js)).
-          - `argsAdapter (partialResults)` (function, optional) - When resolving an entity across multiple subgraphs, an initial query is made to one subgraph followed by one or more followup queries to other subgraphs. The initial query must return enough information to identify the corresponding data in the other subgraphs. This function is invoked with the result of the initial query. It should return an object to be used as argument for `referenceListResolverName` query.
+        - `entities` (object, optional) - Configuration object for working with entities in this subgraph, the values are objects with the the following schema:
+          - `resolver` (object, optional) - The resolver to retrieve a list of objects - should return a list - and should accept as a arguments a list of primary keys or foreign keys.
+            - `name` (string, required) - The name of the resolver.
+            - `argsAdapter (partialResults)` (function, optional) - This function is invoked with a subset of the result of the inital query; `partialResults` is an array of the parent node. It should return an object to be used as argument for `resolver` query.
           **Default:** if missing, the `defaultArgsAdapter` function will be used; if that is missing too, a [generic one](lib/utils.js#L3) will be used.
-          - `keys` (array of object, required) - The keys of the entity, to identify itself or refered to other entities. The key format is `[{ field, type }]`, for example `[{ field: 'id', type: 'Book' }]`. `type` can be omitted referring to the entity itself.
+            - `partialResults` (function, optional) - a function to adapt the subset of the result to be passed to `argsAdapter` - usually is needed only on resolvers of `fkeys` and `many`.
+          - `pkey` (string, required) - The primary key field to identify the entity.
+          - `fkeys` (array of objects, optional) an array to describe the foreign keys of the entities, for example `fkeys: [{ type: 'Author', field: 'authorId' }]`.
+            - `type` (string, required) - The entity type the foreign key is referrered to.
+            - `field` (string, optional) - The foreign key field.
+            - `as` (string, optional) - When using `addEntitiesResolvers`, it defines the name of the foreign entity as a field of the current one, as a single type.
+            - `pkey` (string, optional) - The primary key of the foreign entity.
+            - `subgraph` (string, optional) - The subgraph name of the foreign entity, where the resolver is located; if missing is intended the self.
+            - `resolver` (object, optional) - The resolver definition to query the foreing entity, same structure as `entity.resolver`.
+          - `many` (array of objects, optional) - Describe a 1-to-many relation - the reverse of the foreign key.
+            - `type` (string, required) - The entity type where the entity is a foreign key.
+            - `fkey` (string, required) - The foreign key field in the referred entity.
+            - `as` (string, required) - When using `addEntitiesResolvers`, it defines the name of the relation as a field of the current one, as a list.
+            - `pkey` (string, optional) - The primary key of the referred entity.
+            - `subgraph` (string, optional) - The subgraph name of the referred entity, where the resolver is located; if missing is intended the self.
+            - `resolver` (object, required) - The resolver definition to query the referred entity, same structure as `entity.resolver`.
       - `onSubgraphError` (function, optional) - Hook called when an error occurs getting schema from a subgraph. The default function will throw the error. The arguments are:
           - `error` (error) - The error.
           - `subgraph` (object) - The erroring subgraph.
@@ -208,6 +224,7 @@ main()
       - `mutationTypeName` (string, optional) - The name of the `Mutation` type in the composed schema. **Default:** `'Mutation'`.
       - `subscriptionTypeName` (string, optional) - The name of the `Subscription` type in the composed schema. **Default:** `'Subscription'`.
       - `defaultArgsAdapter` (function, optional) - The default `argsAdapter` function for the entities.
+      - `addEntitiesResolvers` (boolean, optional) - automatically add entities types and resolvers accordingly with configuration, see [composer entities section](#composer-entities).
 
   - Returns
     - A `Promise` that resolves with a `Composer` instance.
@@ -249,3 +266,16 @@ An object containing the GraphQL resolver information for the supergraph.
     - Nothing
 
 A function that should be called by the GraphQL router when a client subscription has ended.
+
+---
+
+### Composer entities
+
+TODO explain: 
+
+- entities: 
+  - fkey
+  - many
+  - as
+
+- addEntitiesResolvers, how it works, what it does

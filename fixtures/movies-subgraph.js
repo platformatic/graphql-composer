@@ -1,6 +1,15 @@
 'use strict'
 
 const schema = `
+  input WhereConditionIn {
+    in: [ID!]!
+  }
+
+  input MoviesWhereCondition {
+    id: WhereConditionIn
+    directorId: WhereConditionIn
+  } 
+
   type Movie {
     id: ID!
     title: String
@@ -8,20 +17,7 @@ const schema = `
   }
 
   type Query {
-    movies(ids: [ID!]!): [Movie]
-  }
-
-  type Artist {
-    id: ID
-    movies: [Movie]
-  }
-
-  extend type Movie {
-    director: Artist
-  }
-
-  extend type Query {
-    movieArtists (ids: [ID!]!): [Artist]
+    movies(where: MoviesWhereCondition): [Movie]
   }
 `
 
@@ -53,38 +49,14 @@ reset()
 
 const resolvers = {
   Query: {
-    movies (_, { ids }) {
-      return Object.values(data.movies).filter(a => ids.includes(String(a.id)))
-    },
-    movieArtists: async (parent, args, context, info) => {
-      return args.ids.map(id => ({ id }))
-    }
-  },
-  Movie: {
-    director: (parent, args, context, info) => {
-      return parent?.directorId ? { id: parent.directorId } : null
-    }
-  },
-  Artist: {
-    // TODO dataloader here
-    movies: (parent, args, context, info) => {
-      return Object.values(data.songs).filter(a => String(a.directorId) === String(parent.id))
+    movies (_, { where }) {
+      const filter = where.id
+        ? (movie) => where.id.in.includes(String(movie.id))
+        : (movie) => where.directorId.in.includes(String(movie.directorId))
+      return Object.values(data.movies)
+        .filter(s => filter(s))
     }
   }
 }
 
-const entities = {
-  Movie: {
-    referenceListResolverName: 'movies',
-    keys: [{ field: 'id' }, { field: 'directorId', type: 'Artist' }]
-  },
-  Artist: {
-    referenceListResolverName: 'movieArtists',
-    argsAdapter: (partialResults) => {
-      return { ids: partialResults.map(r => r.id) }
-    },
-    keys: [{ field: 'id' }]
-  }
-}
-
-module.exports = { name: 'movies', schema, reset, resolvers, entities, data }
+module.exports = { name: 'movies-subgraph', schema, reset, resolvers, data }
