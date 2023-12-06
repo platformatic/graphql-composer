@@ -9,6 +9,14 @@ const reporter = process.stdout.isTTY ? new spec() : tap
 
 const files = glob('test/**/*.test.js')
 
-run({ files, timeout: 30_000, concurrency: files.length })
-  .compose(reporter)
-  .pipe(process.stdout)
+const stream = run({
+  files,
+  timeout: 30_000,
+  concurrency: files.length
+})
+
+stream.on('test:fail', () => {
+  process.exitCode = 1
+})
+
+stream.compose(reporter).pipe(process.stdout)
