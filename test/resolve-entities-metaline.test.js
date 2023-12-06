@@ -105,9 +105,7 @@ const composerOptions = {
             resolver: {
               name: 'movies',
               argsAdapter: 'where.id.in.$',
-              partialResults: (movies) => {
-                return Array.from(new Set([...movies.flat().map(m => m.movieIds).flat()]))
-              }
+              partialResults: '$>#movieIds'
             }
           }
         ]
