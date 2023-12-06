@@ -118,9 +118,7 @@ async function main() {
             // Resolver for retrieving multiple Books.
             resolver: {
               name: 'getBooksByIds',
-              argsAdapter: (partialResults) => {
-                return { ids: partialResults.map(r => r.id) }
-              }
+              argsAdapter: 'ids.$>#id'
             }
           }
         },
