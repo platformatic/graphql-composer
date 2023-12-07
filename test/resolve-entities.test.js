@@ -145,22 +145,18 @@ test('entities', async () => {
     const { composer } = await buildComposer(t, ['artists-subgraph', 'movies-subgraph', 'songs-subgraph'], composerOptions)
     const { schema, resolvers, entities } = composer.resolveEntities()
 
-    const expectedSchema =
-      `type Artist { id: ID, movies: [Movie], songs: [Song] }
-
-type Movie { id: ID!, director: Artist, cinemas: [Cinema] }
-
-type Song { id: ID!, singer: Artist }
-
-type Query {
-  _composer: String 
-}`
+    const expectedSchema = 'type Artist { id: ID, movies: [Movie], songs: [Song] }\n\n' +
+      'type Movie { id: ID!, director: Artist, cinemas: [Cinema] }\n\n' +
+      'type Song { id: ID!, singer: Artist }\n\n' +
+      'type Query {\n' +
+      '  _composer: String \n' +
+      '}'
 
     const expectedResolvers = {
       Artist: {},
       Movie: {},
       Song: {},
-      Query: { _composer: () => {} }
+      Query: { _composer: () => { } }
     }
 
     const expectedEntities = {
@@ -175,9 +171,9 @@ type Query {
             field: 'directorId',
             pkey: 'id',
             resolver: {
-              argsAdapter: () => {},
+              argsAdapter: () => { },
               name: 'movies',
-              partialResults: () => {}
+              partialResults: () => { }
             },
             type: 'Artist'
           }
@@ -191,9 +187,9 @@ type Query {
             field: 'singerId',
             pkey: 'id',
             resolver: {
-              argsAdapter: () => {},
+              argsAdapter: () => { },
               name: 'songs',
-              partialResults: () => {}
+              partialResults: () => { }
             },
             type: 'Artist'
           }

@@ -184,7 +184,7 @@ main()
             - `name` (string, required) - The name of the resolver.
             - `argsAdapter (partialResults)` (function, optional) - This function is invoked with a subset of the result of the inital query; `partialResults` is an array of the parent node. It should return an object to be used as argument for `resolver` query.
           **Default:** if missing, the `defaultArgsAdapter` function will be used; if that is missing too, a [generic one](lib/utils.js#L3) will be used.
-            - `partialResults` (function, optional) - a function to adapt the subset of the result to be passed to `argsAdapter` - usually is needed only on resolvers of `fkeys` and `many`.
+            - `partialResults` (function, optional) - The function to adapt the subset of the result to be passed to `argsAdapter` - usually is needed only on resolvers of `fkeys` and `many`.
           - `pkey` (string, required) - The primary key field to identify the entity.
           - `fkeys` (array of objects, optional) an array to describe the foreign keys of the entities, for example `fkeys: [{ type: 'Author', field: 'authorId' }]`.
             - `type` (string, required) - The entity type the foreign key is referrered to.
@@ -202,7 +202,7 @@ main()
             - `resolver` (object, required) - The resolver definition to query the referred entity, same structure as `entity.resolver`.
       - `onSubgraphError` (function, optional) - Hook called when an error occurs getting schema from a subgraph. The default function will throw the error. The arguments are:
           - `error` (error) - The error.
-          - `subgraph` (object) - The erroring subgraph.
+          - `subgraph` (string) - The erroring subgraph name.
       - `subscriptions` (object, optional) - Subscription hooks. This is required if subscriptions are used. This object adheres to the following schema.
         - `onError(ctx, topic, error)` (function, required) - Hook called when a subscription error occurs. The arguments are:
           - `ctx` (any) - GraphQL context object.
