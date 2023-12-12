@@ -16,6 +16,7 @@
     "graphql": "^16.8.1",
     "mercurius": "^13.2.2",
     "metaline": "^1.1.0",
+    "pino": "^8.16.2",
     "undici": "^6.0.0"
   },
   "devDependencies": {

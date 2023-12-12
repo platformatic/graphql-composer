@@ -100,4 +100,4 @@ const entities = {
   }
 }
 
-module.exports = { name: 'songs', schema, reset, resolvers, entities, data }
+module.exports = { name: 'songs-subgraph', schema, reset, resolvers, entities, data }
