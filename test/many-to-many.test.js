@@ -6,14 +6,6 @@ const pino = require('pino')
 const { graphqlRequest, buildComposer } = require('./helper')
 
 test('should handle many-to-many relation linked by an intermediary entity', async (t) => {
-  const requests = [
-    {
-      query: '{ restaurants (where: { id: { in: [90, 91] } }) { name, foods { name } } }',
-      expected: { restaurants: [{ name: 'Pizzeria Napoletana', foods: [{ name: 'Pizza margherita' }, { name: 'Pizza boscaiola' }, { name: 'Pizza capricciosa' }] }, { name: 'Ristorante Stellato', foods: [{ name: 'Spaghetti carbonara' }, { name: 'Tagliolini scoglio' }, { name: 'Pici cacio e pepe' }] }] }
-    }
-    // TODO reverse, nested, nested x n
-  ]
-
   const composerOptions = {
     defaultArgsAdapter: (partialResults) => {
       return { where: { id: { in: partialResults.map(r => r.id) } } }
@@ -61,18 +53,60 @@ test('should handle many-to-many relation linked by an intermediary entity', asy
       'foods-subgraph': {
         Food: {
           resolver: { name: 'foods' },
-          pkey: 'id'
-        //   many: [
-        //     {
-        //       type: 'Restaurant',
-        //       as: 'restaurants'
-        //       // TODO ...
-        //     }
-        //   ]
+          pkey: 'id',
+          many: [
+            {
+              type: 'Restaurant',
+              as: 'restaurants',
+              pkey: 'id',
+              link: {
+                type: 'RestaurantsFoods',
+                pkey: 'foodId',
+                fkey: 'restaurantId',
+                subgraph: 'restaurants-subgraph',
+                resolver: {
+                  name: 'restaurantsFoods',
+                  argsAdapter: (foodIds) => {
+                    return { where: { foodId: { in: foodIds } } }
+                  },
+                  partialResults: (foods) => {
+                    return foods.map(r => r.id)
+                  }
+                }
+              },
+              subgraph: 'restaurants-subgraph',
+              resolver: {
+                name: 'restaurants',
+                argsAdapter: (restaurantIds) => {
+                  return { where: { id: { in: restaurantIds } } }
+                },
+                partialResults: (restaurantFoods) => {
+                  return restaurantFoods.map(r => r.restaurantId)
+                }
+              }
+            }
+          ]
         }
       }
     }
   }
+
+  const requests = [
+    // {
+    //   query: '{ restaurants (where: { id: { in: [90, 91] } }) { businessName, foods { name } } }',
+    //   expected: {
+    //     restaurants: [
+    //       { businessName: 'Pizzeria Napoletana', foods: [{ name: 'Pizza margherita' }, { name: 'Pizza boscaiola' }, { name: 'Pizza capricciosa' }] },
+    //       { businessName: 'Ristorante Stellato', foods: [{ name: 'Spaghetti carbonara' }, { name: 'Tagliolini scoglio' }, { name: 'Pici cacio e pepe' }] }
+    //     ]
+    //   }
+    // },
+    {
+      query: '{ foods (where: { id: { in: [50, 60] } }) { name, restaurants { businessName } } }',
+      expected: { }
+    }
+    // TODO nested, nested x n
+  ]
 
   const { service } = await buildComposer(t, ['restaurants-subgraph', 'foods-subgraph'], composerOptions)
 

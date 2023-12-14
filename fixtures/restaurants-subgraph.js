@@ -16,7 +16,7 @@ const schema = `
 
   type Restaurant {
     id: ID!
-    name: String
+    businessName: String
   }
 
   type RestaurantsFoods {
@@ -75,15 +75,15 @@ function reset () {
   data.restaurants = {
     90: {
       id: 90,
-      name: 'Pizzeria Napoletana'
+      businessName: 'Pizzeria Napoletana'
     },
     91: {
       id: 91,
-      name: 'Ristorante Stellato'
+      businessName: 'Ristorante Stellato'
     },
     92: {
       id: 92,
-      name: 'Trattoria da Gigi'
+      businessName: 'Trattoria da Gigi'
     }
   }
 }
