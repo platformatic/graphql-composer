@@ -173,6 +173,9 @@ main()
 
   - Arguments
     - `config` (object, optional) - A configuration object with the following schema.
+      - `defaultArgsAdapter` (function, optional) - The default `argsAdapter` function for the entities.
+      - `addEntitiesResolvers` (boolean, optional) - automatically add entities types and resolvers  accordingly with configuration, see [composer entities section](#composer-entities).
+      - `logger` TODO
       - `subgraphs` (array, optional) - Array of subgraph configuration objects with the following schema.
         - `name` (string, optional) - A unique name to identify the subgraph; if missing the default one is `#${index}`, where index is the subgraph index in the array.
         - `server` (object, required) - Configuration object for communicating with the subgraph server with the following schema:
@@ -195,11 +198,12 @@ main()
             - `resolver` (object, optional) - The resolver definition to query the foreing entity, same structure as `entity.resolver`.
           - `many` (array of objects, optional) - Describe a 1-to-many relation - the reverse of the foreign key.
             - `type` (string, required) - The entity type where the entity is a foreign key.
-            - `fkey` (string, required) - The foreign key field in the referred entity.
+            - `fkey` (string, optional) - The foreign key field in the referred entity. TODO Required but not on `link`
             - `as` (string, required) - When using `addEntitiesResolvers`, it defines the name of the relation as a field of the current one, as a list.
             - `pkey` (string, optional) - The primary key of the referred entity.
             - `subgraph` (string, optional) - The subgraph name of the referred entity, where the resolver is located; if missing is intended the self.
             - `resolver` (object, required) - The resolver definition to query the referred entity, same structure as `entity.resolver`.
+            - `link` TODO
       - `onSubgraphError` (function, optional) - Hook called when an error occurs getting schema from a subgraph. The default function will throw the error. The arguments are:
           - `error` (error) - The error.
           - `subgraph` (string) - The erroring subgraph name.
@@ -221,8 +225,6 @@ main()
       - `queryTypeName` (string, optional) - The name of the `Query` type in the composed schema. **Default:** `'Query'`.
       - `mutationTypeName` (string, optional) - The name of the `Mutation` type in the composed schema. **Default:** `'Mutation'`.
       - `subscriptionTypeName` (string, optional) - The name of the `Subscription` type in the composed schema. **Default:** `'Subscription'`.
-      - `defaultArgsAdapter` (function, optional) - The default `argsAdapter` function for the entities.
-      - `addEntitiesResolvers` (boolean, optional) - automatically add entities types and resolvers accordingly with configuration, see [composer entities section](#composer-entities).
 
   - Returns
     - A `Promise` that resolves with a `Composer` instance.

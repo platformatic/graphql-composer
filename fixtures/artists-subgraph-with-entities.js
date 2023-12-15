@@ -91,4 +91,4 @@ const entities = {
   }
 }
 
-module.exports = { name: 'artists', schema, reset, resolvers, entities, data }
+module.exports = { name: 'artists-subgraph', schema, reset, resolvers, entities, data }
