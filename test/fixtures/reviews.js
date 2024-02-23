@@ -13,7 +13,8 @@ const schema = `
   }
 
   type Book {
-    id: ID!
+    bookId: ID!
+    rate: Int
     reviews: [Review]!
   }
 
@@ -33,10 +34,6 @@ const schema = `
 
   type Mutation {
     createReview(review: ReviewInput!): Review!
-  }
-
-  type Subscription {
-    reviewPosted: ReviewWithBook!
   }
 `
 let reviews
@@ -68,19 +65,23 @@ function reset () {
 
   books = {
     1: {
-      id: 1,
+      bookId: 1,
+      rate: 3,
       reviews: [1]
     },
     2: {
-      id: 2,
+      bookId: 2,
+      rate: 4,
       reviews: [2]
     },
     3: {
-      id: 3,
+      bookId: 3,
+      rate: 5,
       reviews: [2, 3, 4]
     },
     4: {
-      id: 4,
+      bookId: 4,
+      rate: null,
       reviews: []
     }
   }
@@ -119,6 +120,7 @@ const resolvers = {
 
         return book
       })
+        .filter(b => !!b)
     }
   },
   Mutation: {
@@ -128,7 +130,7 @@ const resolvers = {
       const review = { id, rating, content }
 
       reviews[id] = review
-      books[bookId] ??= { id: bookId, reviews: [] }
+      books[bookId] ??= { bookId, reviews: [] }
       const book = books[bookId]
       book.reviews.push(id)
       context.app.graphql.pubsub.publish({
@@ -148,18 +150,11 @@ const resolvers = {
 
       return review
     }
-  },
-  Subscription: {
-    reviewPosted: {
-      subscribe: (root, args, ctx) => {
-        return ctx.pubsub.subscribe('REVIEW_POSTED')
-      }
-    }
   }
 }
 const entities = {
   Book: {
-    pkey: 'id',
+    pkey: 'bookId',
     resolver: {
       name: 'getReviewBookByIds',
       argsAdapter (partialResults) {
@@ -171,4 +166,4 @@ const entities = {
   }
 }
 
-module.exports = { name: 'reviews', entities, reset, resolvers, schema }
+module.exports = { entities, reset, resolvers, schema }

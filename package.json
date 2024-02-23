@@ -4,24 +4,22 @@
   "description": "GraphQL API Composer",
   "license": "Apache-2.0",
   "main": "lib/index.js",
-  "author": "Colin J. Ihrig <cjihrig@gmail.com> (http://www.cjihrig.com/)",
   "scripts": {
-    "test": "npm run lint && c8 node --test test/runner.js",
+    "test": "npm run lint && borp --coverage",
     "lint": "standard | snazzy",
     "lint:fix": "standard --fix"
   },
   "dependencies": {
-    "@mercuriusjs/subscription-client": "^1.0.0",
-    "fastify": "^4.24.3",
+    "fastify": "^4.26.1",
     "graphql": "^16.8.1",
-    "mercurius": "^13.2.2",
+    "mercurius": "^13.3.3",
     "metaline": "^1.1.0",
-    "pino": "^8.16.2",
-    "undici": "^6.0.0"
+    "pino": "^8.18.0",
+    "undici": "^6.6.2"
   },
   "devDependencies": {
-    "c8": "^8.0.1",
-    "glob": "^10.3.10",
+    "borp": "^0.9.1",
+    "dedent": "^1.5.1",
     "snazzy": "^9.0.0",
     "standard": "^17.1.0"
   }

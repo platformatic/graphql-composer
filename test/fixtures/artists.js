@@ -59,4 +59,4 @@ const resolvers = {
   }
 }
 
-module.exports = { name: 'artists-subgraph', schema, reset, resolvers, data }
+module.exports = { schema, reset, resolvers, data }

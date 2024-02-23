@@ -66,10 +66,6 @@ type Query {
 type Mutation {
   createReview(review: ReviewInput!): Review!
 }
-
-type Subscription {
-  reviewPosted: ReviewWithBook!
-}
 ```
 
 The Composer will download each subgraph schema from the corresponding upstream servers. The two subgraphs will be merged to create a supergraph API. The combined API exposes the original operations from each subgraph. Furthermore, types with the same name in multiple subgraphs are merged together into entities. For example, when the `Books` and `Reviews` subgraphs are merged, the `Book` type becomes:
@@ -126,25 +122,7 @@ async function main() {
       { // Reviews subgraph information.
         ...
       }
-    ],
-    // Hooks for subscriptions.
-    subscriptions: {
-      onError (ctx, topic, error) {
-        throw error;
-      },
-      publish (ctx, topic, payload) {
-        ctx.pubsub.publish({
-          topic,
-          payload
-        })
-      },
-      subscribe (ctx, topic) {
-        return ctx.pubsub.subscribe(topic)
-      },
-      unsubscribe (ctx, topic) {
-        ctx.pubsub.close()
-      }
-    }
+    ]
   })
 
   // Create a Fastify server that uses the Mercurius GraphQL plugin.
@@ -152,15 +130,10 @@ async function main() {
 
   router.register(Mercurius, {
     schema: composer.toSdl(),
-    resolvers: composer.resolvers,
-    subscription: true
+    resolvers: composer.resolvers
   })
 
   await router.ready()
-  // If subscriptions are used, the GraphQL router's server implementation
-  // should call onSubscriptionEnd() when a subscription ends. This tells
-  // the composer to clean up the resources associated with the subscription.
-  router.graphql.addHook('onSubscriptionEnd', composer.onSubscriptionEnd)
   await router.listen()
 }
 
@@ -174,7 +147,7 @@ main()
   - Arguments
     - `config` (object, optional) - A configuration object with the following schema.
       - `defaultArgsAdapter` (function, optional) - The default `argsAdapter` function for the entities.
-      - `addEntitiesResolvers` (boolean, optional) - automatically add entities types and resolvers  accordingly with configuration, see [composer entities section](#composer-entities).
+      - `addEntitiesResolvers` (boolean, optional) - automatically add entities types and resolvers accordingly with configuration, see [composer entities section](#composer-entities).
       - `logger` TODO
       - `subgraphs` (array, optional) - Array of subgraph configuration objects with the following schema.
         - `name` (string, optional) - A unique name to identify the subgraph; if missing the default one is `#${index}`, where index is the subgraph index in the array.
@@ -207,24 +180,8 @@ main()
       - `onSubgraphError` (function, optional) - Hook called when an error occurs getting schema from a subgraph. The default function will throw the error. The arguments are:
           - `error` (error) - The error.
           - `subgraph` (string) - The erroring subgraph name.
-      - `subscriptions` (object, optional) - Subscription hooks. This is required if subscriptions are used. This object adheres to the following schema.
-        - `onError(ctx, topic, error)` (function, required) - Hook called when a subscription error occurs. The arguments are:
-          - `ctx` (any) - GraphQL context object.
-          - `topic` (string) - The subscription topic.
-          - `error` (error) - The subscription error.
-        - `publish(ctx, topic, payload)` (function, required) - Hook called to publish new data to a topic. The arguments are:
-          - `ctx` (any) - GraphQL context object.
-          - `topic` (string) - The subscription topic.
-          - `payload` (object) - The subscriptiondata to publish.
-        - `subscribe(ctx, topic)` (function, required) - Hook called to subscribe to a topic. The arguments are:
-          - `ctx` (any) - GraphQL context object.
-          - `topic` (string) - The subscription topic.
-        - `unsubscribe(ctx, topic)` (function, required) - Hook called to unsubscribe from a topic. The arguments are:
-          - `ctx` (any) - GraphQL context object.
-          - `topic` (string) - The subscription topic.
       - `queryTypeName` (string, optional) - The name of the `Query` type in the composed schema. **Default:** `'Query'`.
       - `mutationTypeName` (string, optional) - The name of the `Mutation` type in the composed schema. **Default:** `'Mutation'`.
-      - `subscriptionTypeName` (string, optional) - The name of the `Subscription` type in the composed schema. **Default:** `'Subscription'`.
 
   - Returns
     - A `Promise` that resolves with a `Composer` instance.
@@ -256,16 +213,6 @@ Returns the supergraph schema as a GraphQL `IntrospectionQuery` object. This rep
 #### `composer.resolvers`
 
 An object containing the GraphQL resolver information for the supergraph.
-
-#### `onSubscriptionEnd(ctx, topic)`
-
-  - Arguments
-    - `ctx` (any) - GraphQL context object.
-    - `topic` (string) - The subscription topic.
-  - Returns
-    - Nothing
-
-A function that should be called by the GraphQL router when a client subscription has ended.
 
 ---
 

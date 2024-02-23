@@ -68,4 +68,4 @@ const resolvers = {
   }
 }
 
-module.exports = { name: 'cinemas-subgraph', schema, reset, resolvers, data }
+module.exports = { schema, reset, resolvers, data }
