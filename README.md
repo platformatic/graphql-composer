@@ -2,7 +2,9 @@
 
 The GraphQL API Composer is a framework agnostic library for combining multiple GraphQL APIs, known as subgraphs, into a single API capable of querying data across any of its constituent subgraphs.
 
-## Example
+The Composer downloads each subgraph schema from the corresponding upstream servers. The subgraphs will be merged to create a supergraph API. The combined API exposes the original operations from each subgraph. Furthermore, types with the same name in multiple subgraphs are merged together into entities. 
+
+## Getting Started
 
 Given the following `Books` subgraph schema:
 
@@ -20,7 +22,7 @@ type Book {
 
 type Query {
   getBook(id: ID!): Book
-  getBooksByIds(ids: [ID]!): [Book]!
+  getBooks(ids: [ID]!): [Book]!
 }
 ```
 
@@ -58,23 +60,19 @@ type ReviewWithBook {
 
 type Query {
   getReview(id: ID!): Review
-  getReviewBook(id: ID!): Book
-  getReviewBookByIds(ids: [ID]!): [Book]!
-  getReviewsByBookId(id: ID!): [Review]!
+  getReviews(ids: [ID]!): Review
+  getReviewBook(bookId: ID!): Book
 }
 
 type Mutation {
   createReview(review: ReviewInput!): Review!
 }
-
-type Subscription {
-  reviewPosted: ReviewWithBook!
-}
 ```
 
-The Composer will download each subgraph schema from the corresponding upstream servers. The two subgraphs will be merged to create a supergraph API. The combined API exposes the original operations from each subgraph. Furthermore, types with the same name in multiple subgraphs are merged together into entities. For example, when the `Books` and `Reviews` subgraphs are merged, the `Book` type becomes:
+When the `Books` and `Reviews` subgraphs are merged, the `Book` type becomes:
 
 ```graphql
+TODO
 type Book {
   # Common field used to uniquely identify a Book.
   id: ID!
@@ -83,85 +81,94 @@ type Book {
   title: String
   genre: BookGenre
 
-  # nested types
-  author: Author
-
   # Fields from the Reviews subgraph.
+  rate: Int
   reviews: [Review]!
 }
 ```
 
-The following example shows how the GraphQL API Composer can be used with Fastify and Mercurius.
+The following example shows how the GraphQL API Composer can be used with Fastify and Mercurius - see [/examples/getting-started.js](/examples/getting-started.js) for the full code.
 
 ```js
-'use strict';
+'use strict'
+
 const { compose } = require('@platformatic/graphql-composer')
 const Fastify = require('fastify')
 const Mercurius = require('mercurius')
 
-async function main() {
+async function main () {
+  // Get schema information from subgraphs
   const composer = await compose({
     subgraphs: [
-      { // Books subgraph information.
-        // Subgraph server to connect to.
+      {
+        // Books subgraph information
+        name: 'books',
+        // Subgraph server to connect to
         server: {
-          host: 'localhost:3000',
-          // Endpoint for retrieving introspection schema.
-          composeEndpoint: '/graphql-composition',
-          // Endpoint for GraphQL queries.
-          graphqlEndpoint: '/graphql'
+          host: booksServiceHost
         },
+        // Configuration for working with Book entities in this subgraph
         entities: {
-          // Configuration for working with Book entities in this subgraph.
           Book: {
             pkey: 'id',
-            // Resolver for retrieving multiple Books.
+            // Resolver for retrieving multiple Books
             resolver: {
-              name: 'getBooksByIds',
-              argsAdapter: 'ids.$>#id'
+              name: 'getBooks',
+              argsAdapter: (partialResults) => ({
+                ids: partialResults.map(r => r.id)
+              })
             }
           }
+        }
+      },
+      {
+        // Reviews subgraph information
+        name: 'reviews',
+        server: {
+          host: reviewsServiceHost
         },
-      },
-      { // Reviews subgraph information.
-        ...
+        // Configuration for Review entity
+        entities: {
+          Review: {
+            pkey: 'id',
+            // Resolver for retrieving multiple Books
+            resolver: {
+              name: 'getReviews',
+              argsAdapter: (partialResults) => ({
+                ids: partialResults.map(r => r.id)
+              })
+            }
+          },
+          // Book entity is here too
+          Book: {
+            pkey: 'id',
+            // Resolver for retrieving multiple Books
+            resolver: {
+              name: 'getReviewBooks',
+              argsAdapter: (partialResults) => ({
+                bookIds: partialResults.map(r => r.id)
+              })
+            }
+          }
+        }
       }
-    ],
-    // Hooks for subscriptions.
-    subscriptions: {
-      onError (ctx, topic, error) {
-        throw error;
-      },
-      publish (ctx, topic, payload) {
-        ctx.pubsub.publish({
-          topic,
-          payload
-        })
-      },
-      subscribe (ctx, topic) {
-        return ctx.pubsub.subscribe(topic)
-      },
-      unsubscribe (ctx, topic) {
-        ctx.pubsub.close()
-      }
-    }
+    ]
   })
 
-  // Create a Fastify server that uses the Mercurius GraphQL plugin.
-  const router = Fastify()
+  // Create a Fastify server that uses the Mercurius GraphQL plugin
+  const composerService = Fastify()
 
-  router.register(Mercurius, {
+  composerService.register(Mercurius, {
     schema: composer.toSdl(),
     resolvers: composer.resolvers,
-    subscription: true
+    graphiql: true
   })
 
-  await router.ready()
-  // If subscriptions are used, the GraphQL router's server implementation
-  // should call onSubscriptionEnd() when a subscription ends. This tells
-  // the composer to clean up the resources associated with the subscription.
-  router.graphql.addHook('onSubscriptionEnd', composer.onSubscriptionEnd)
-  await router.listen()
+  await composerService.ready()
+  await composerService.listen()
+
+  // Then query the composer service
+  // { getBook (id: 1) { id title reviews { content rating } } }
 }
 
 main()
@@ -173,6 +180,9 @@ main()
 
   - Arguments
     - `config` (object, optional) - A configuration object with the following schema.
+      - `defaultArgsAdapter` (function, optional) - The default `argsAdapter` function for the entities.
+      - `addEntitiesResolvers` (boolean, optional) - automatically add entities types and resolvers accordingly with configuration, see [composer entities section](#composer-entities).
+      - `logger` (pino instance, optional) - The composer logger
       - `subgraphs` (array, optional) - Array of subgraph configuration objects with the following schema.
         - `name` (string, optional) - A unique name to identify the subgraph; if missing the default one is `#${index}`, where index is the subgraph index in the array.
         - `server` (object, required) - Configuration object for communicating with the subgraph server with the following schema:
@@ -195,7 +205,7 @@ main()
             - `resolver` (object, optional) - The resolver definition to query the foreing entity, same structure as `entity.resolver`.
           - `many` (array of objects, optional) - Describe a 1-to-many relation - the reverse of the foreign key.
             - `type` (string, required) - The entity type where the entity is a foreign key.
-            - `fkey` (string, required) - The foreign key field in the referred entity.
+            - `fkey` (string, optional) - The foreign key field in the referred entity.
             - `as` (string, required) - When using `addEntitiesResolvers`, it defines the name of the relation as a field of the current one, as a list.
             - `pkey` (string, optional) - The primary key of the referred entity.
             - `subgraph` (string, optional) - The subgraph name of the referred entity, where the resolver is located; if missing is intended the self.
@@ -203,26 +213,8 @@ main()
       - `onSubgraphError` (function, optional) - Hook called when an error occurs getting schema from a subgraph. The default function will throw the error. The arguments are:
           - `error` (error) - The error.
           - `subgraph` (string) - The erroring subgraph name.
-      - `subscriptions` (object, optional) - Subscription hooks. This is required if subscriptions are used. This object adheres to the following schema.
-        - `onError(ctx, topic, error)` (function, required) - Hook called when a subscription error occurs. The arguments are:
-          - `ctx` (any) - GraphQL context object.
-          - `topic` (string) - The subscription topic.
-          - `error` (error) - The subscription error.
-        - `publish(ctx, topic, payload)` (function, required) - Hook called to publish new data to a topic. The arguments are:
-          - `ctx` (any) - GraphQL context object.
-          - `topic` (string) - The subscription topic.
-          - `payload` (object) - The subscriptiondata to publish.
-        - `subscribe(ctx, topic)` (function, required) - Hook called to subscribe to a topic. The arguments are:
-          - `ctx` (any) - GraphQL context object.
-          - `topic` (string) - The subscription topic.
-        - `unsubscribe(ctx, topic)` (function, required) - Hook called to unsubscribe from a topic. The arguments are:
-          - `ctx` (any) - GraphQL context object.
-          - `topic` (string) - The subscription topic.
       - `queryTypeName` (string, optional) - The name of the `Query` type in the composed schema. **Default:** `'Query'`.
       - `mutationTypeName` (string, optional) - The name of the `Mutation` type in the composed schema. **Default:** `'Mutation'`.
-      - `subscriptionTypeName` (string, optional) - The name of the `Subscription` type in the composed schema. **Default:** `'Subscription'`.
-      - `defaultArgsAdapter` (function, optional) - The default `argsAdapter` function for the entities.
-      - `addEntitiesResolvers` (boolean, optional) - automatically add entities types and resolvers accordingly with configuration, see [composer entities section](#composer-entities).
 
   - Returns
     - A `Promise` that resolves with a `Composer` instance.
@@ -254,26 +246,3 @@ Returns the supergraph schema as a GraphQL `IntrospectionQuery` object. This rep
 #### `composer.resolvers`
 
 An object containing the GraphQL resolver information for the supergraph.
-
-#### `onSubscriptionEnd(ctx, topic)`
-
-  - Arguments
-    - `ctx` (any) - GraphQL context object.
-    - `topic` (string) - The subscription topic.
-  - Returns
-    - Nothing
-
-A function that should be called by the GraphQL router when a client subscription has ended.
-
----
-
-### Composer entities
-
-TODO explain: 
-
-- entities: 
-  - fkey
-  - many
-  - as
-
-- addEntitiesResolvers, how it works, what it does

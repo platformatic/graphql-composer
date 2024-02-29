@@ -1,92 +1,18 @@
 'use strict'
 
+const path = require('node:path')
 const assert = require('node:assert/strict')
 const { test } = require('node:test')
-const path = require('node:path')
+const { compose } = require('../../lib')
+const { Composer } = require('../../lib/composer')
+const { createComposerService, createGraphqlServices, graphqlRequest, assertObject } = require('../helper')
 
-const { compose } = require('../lib')
-const { graphqlRequest, createComposerService, createGraphqlServices } = require('./helper')
-
-test('throws if argsAdapter function does not return an object', async (t) => {
-  const query = 'query { getReviewBook(id: 1) { title } }'
-
-  const services = await createGraphqlServices(t, [
-    {
-      name: 'books-subgraph',
-      file: path.join(__dirname, 'fixtures/books.js'),
-      listen: true
-    },
-    {
-      name: 'reviews-subgraph',
-      file: path.join(__dirname, 'fixtures/reviews.js'),
-      listen: true
-    }
-  ])
-  const options = {
-    subgraphs: services.map(service => ({
-      entities: service.config.entities,
-      name: service.name,
-      server: { host: service.host }
-    }))
-  }
-
-  options.subgraphs[0].entities.Book.resolver.argsAdapter = () => 'nope'
-
-  const { service } = await createComposerService(t, { compose, options })
-
-  await assert.rejects(async () => {
-    await graphqlRequest(service, query)
-  }, (err) => {
-    assert.strictEqual(Array.isArray(err), true)
-    assert.strictEqual(err.length, 1)
-    assert.strictEqual(err[0].message, 'argsAdapter did not return an object. returned nope.')
-    assert.deepStrictEqual(err[0].path, ['getReviewBook'])
-    return true
-  })
-})
-
-test('throws if argsAdapter function throws an error', async (t) => {
-  const query = 'query { getReviewBook(id: 1) { title } }'
-
-  const services = await createGraphqlServices(t, [
-    {
-      name: 'books-subgraph',
-      file: path.join(__dirname, 'fixtures/books.js'),
-      listen: true
-    },
-    {
-      name: 'reviews-subgraph',
-      file: path.join(__dirname, 'fixtures/reviews.js'),
-      listen: true
-    }
-  ])
-  const options = {
-    subgraphs: services.map(service => ({
-      entities: service.config.entities,
-      name: service.name,
-      server: { host: service.host }
-    }))
-  }
-
-  options.subgraphs[0].entities.Book.resolver.argsAdapter = () => { throw new Error('boom') }
-
-  const { service } = await createComposerService(t, { compose, options })
-
-  await assert.rejects(async () => {
-    await graphqlRequest(service, query)
-  }, (err) => {
-    assert.strictEqual(Array.isArray(err), true)
-    assert.strictEqual(err.length, 1)
-    assert.strictEqual(err[0].message, 'Error running argsAdapter for getBooksByIds')
-    assert.deepStrictEqual(err[0].path, ['getReviewBook'])
-    return true
-  })
-})
-
-test('use metaline on adapter functions', async () => {
+test('composer on top', async () => {
   const composerOptions = {
     addEntitiesResolvers: true,
-    defaultArgsAdapter: 'where.id.in.$>#id',
+    defaultArgsAdapter: (partialResults) => {
+      return { where: { id: { in: partialResults.map(r => r.id) } } }
+    },
     entities: {
       Artist: {
         subgraph: 'artists-subgraph',
@@ -101,8 +27,12 @@ test('use metaline on adapter functions', async () => {
             subgraph: 'movies-subgraph',
             resolver: {
               name: 'movies',
-              argsAdapter: 'where.directorId.in.$',
-              partialResults: '$>#id'
+              argsAdapter: (artistIds) => {
+                return { where: { directorId: { in: artistIds } } }
+              },
+              partialResults: (artists) => {
+                return artists.map(r => r.id)
+              }
             }
           },
           {
@@ -113,8 +43,12 @@ test('use metaline on adapter functions', async () => {
             subgraph: 'songs-subgraph',
             resolver: {
               name: 'songs',
-              argsAdapter: 'where.singerId.in.$',
-              partialResults: '$>#id'
+              argsAdapter: (artistIds) => {
+                return { where: { singerId: { in: artistIds } } }
+              },
+              partialResults: (artists) => {
+                return artists.map(r => r.id)
+              }
             }
           }
         ]
@@ -132,8 +66,12 @@ test('use metaline on adapter functions', async () => {
             subgraph: 'artists-subgraph',
             resolver: {
               name: 'artists',
-              argsAdapter: 'where.id.in.$>#id',
-              partialResults: '$>id.#directorId'
+              argsAdapter: (directorIds) => {
+                return { where: { id: { in: directorIds.map(r => r.id) } } }
+              },
+              partialResults: (movies) => {
+                return movies.map(r => ({ id: r.directorId }))
+              }
             }
           }
         ],
@@ -146,8 +84,12 @@ test('use metaline on adapter functions', async () => {
             subgraph: 'cinemas-subgraph',
             resolver: {
               name: 'cinemas',
-              argsAdapter: 'where.movieIds.in.$',
-              partialResults: '$>#id'
+              argsAdapter: (movieIds) => {
+                return { where: { movieIds: { in: movieIds } } }
+              },
+              partialResults: (movies) => {
+                return movies.map(r => r.id)
+              }
             }
           }
         ]
@@ -165,8 +107,12 @@ test('use metaline on adapter functions', async () => {
             subgraph: 'artists-subgraph',
             resolver: {
               name: 'artists',
-              argsAdapter: 'where.id.in.$>#id',
-              partialResults: '$>id.#singerId'
+              argsAdapter: (singerIds) => {
+                return { where: { id: { in: singerIds.map(r => r.id) } } }
+              },
+              partialResults: (songs) => {
+                return songs.map(r => ({ id: r.singerId }))
+              }
             }
           }
         ]
@@ -184,8 +130,12 @@ test('use metaline on adapter functions', async () => {
             subgraph: 'movies-subgraph',
             resolver: {
               name: 'movies',
-              argsAdapter: 'where.id.in.$',
-              partialResults: '$>#movieIds'
+              argsAdapter: (movieIds) => {
+                return { where: { id: { in: movieIds } } }
+              },
+              partialResults: (movies) => {
+                return Array.from(new Set([...movies.flat().map(m => m.movieIds).flat()]))
+              }
             }
           }
         ]
@@ -193,26 +143,193 @@ test('use metaline on adapter functions', async () => {
     }
   }
 
-  await test('should generate entities resolvers for composer on top for multiple subgraphs', async t => {
+  await test('should generate entities for composer on top for multiple subgraphs', async t => {
+    const expectedSchema = 'type Artist { id: ID, movies: [Movie], songs: [Song] }\n\n' +
+      'type Movie { id: ID!, director: Artist, cinemas: [Cinema] }\n\n' +
+      'type Song { id: ID!, singer: Artist }\n\n' +
+      'type Cinema { id: ID!, movies: [Movie] }\n\n' +
+      'type Query {\n' +
+      '  _composer: String \n' +
+      '}'
+
+    const expectedResolvers = {
+      Artist: {},
+      Movie: {},
+      Song: {},
+      Query: { _composer: () => { } }
+    }
+    const fn = () => {}
+
+    const expectedEntities = {
+      Artist: {
+        subgraph: 'artists-subgraph',
+        resolver: { name: 'artists', argsAdapter: fn },
+        pkey: 'id',
+        fkeys: [],
+        many: [
+          {
+            type: 'Movie',
+            pkey: 'id',
+            as: 'movies',
+            fkey: 'directorId',
+            subgraph: 'movies-subgraph',
+            resolver: {
+              name: 'movies',
+              argsAdapter: fn,
+              partialResults: fn
+            }
+          },
+          {
+            type: 'Song',
+            pkey: 'id',
+            as: 'songs',
+            fkey: 'singerId',
+            subgraph: 'songs-subgraph',
+            resolver: {
+              name: 'songs',
+              argsAdapter: fn,
+              partialResults: fn
+            }
+          }
+        ]
+      },
+      Movie: {
+        subgraph: 'movies-subgraph',
+        resolver: { name: 'movies', argsAdapter: fn },
+        pkey: 'id',
+        fkeys: [
+          {
+            type: 'Artist',
+            field: 'directorId',
+            as: 'director',
+            pkey: 'id',
+            subgraph: 'artists-subgraph',
+            resolver: {
+              name: 'artists',
+              argsAdapter: fn,
+              partialResults: fn
+            }
+          }
+        ],
+        many: [
+          {
+            type: 'Cinema',
+            pkey: 'id',
+            as: 'cinemas',
+            fkey: 'movieIds',
+            subgraph: 'cinemas-subgraph',
+            resolver: {
+              name: 'cinemas',
+              argsAdapter: fn,
+              partialResults: fn
+            }
+          }
+        ]
+      },
+      Song: {
+        subgraph: 'songs-subgraph',
+        resolver: { name: 'songs', argsAdapter: fn },
+        pkey: 'id',
+        fkeys: [
+          {
+            type: 'Artist',
+            field: 'singerId',
+            as: 'singer',
+            pkey: 'id',
+            subgraph: 'artists-subgraph',
+            resolver: {
+              name: 'artists',
+              argsAdapter: fn,
+              partialResults: fn
+            }
+          }
+        ],
+        many: []
+      },
+      Cinema: {
+        subgraph: 'cinemas-subgraph',
+        resolver: { name: 'cinemas', argsAdapter: fn },
+        pkey: 'id',
+        fkeys: [],
+        many: [
+          {
+            type: 'Movie',
+            pkey: 'movieIds',
+            as: 'movies',
+            fkey: 'id',
+            subgraph: 'movies-subgraph',
+            resolver: {
+              name: 'movies',
+              argsAdapter: fn,
+              partialResults: fn
+            }
+          }
+        ]
+      }
+    }
+
     const services = await createGraphqlServices(t, [
       {
         name: 'artists-subgraph',
-        file: path.join(__dirname, 'fixtures/artists.js'),
+        file: path.join(__dirname, '../fixtures/artists.js'),
         listen: true
       },
       {
         name: 'movies-subgraph',
-        file: path.join(__dirname, 'fixtures/movies.js'),
+        file: path.join(__dirname, '../fixtures/movies.js'),
         listen: true
       },
       {
         name: 'songs-subgraph',
-        file: path.join(__dirname, 'fixtures/songs.js'),
+        file: path.join(__dirname, '../fixtures/songs.js'),
         listen: true
       },
       {
         name: 'cinemas-subgraph',
-        file: path.join(__dirname, 'fixtures/cinemas.js'),
+        file: path.join(__dirname, '../fixtures/cinemas.js'),
+        listen: true
+      }
+    ])
+
+    const options = {
+      ...composerOptions,
+      subgraphs: services.map(service => (
+        {
+          name: service.name,
+          server: { host: service.host }
+        }
+      ))
+    }
+    const composer = new Composer(options)
+    await composer.compose()
+
+    const { schema, resolvers, entities } = composer.resolveEntities()
+
+    assert.strictEqual(schema, expectedSchema)
+    assertObject(resolvers, expectedResolvers)
+    assertObject(entities, expectedEntities)
+  })
+
+  await test('should generate entities resolvers for composer on top for multiple subgraphs', async t => {
+    const services = await createGraphqlServices(t, [
+      {
+        name: 'artists-subgraph',
+        file: path.join(__dirname, '../fixtures/artists.js'),
+        listen: true
+      },
+      {
+        name: 'movies-subgraph',
+        file: path.join(__dirname, '../fixtures/movies.js'),
+        listen: true
+      },
+      {
+        name: 'songs-subgraph',
+        file: path.join(__dirname, '../fixtures/songs.js'),
+        listen: true
+      },
+      {
+        name: 'cinemas-subgraph',
+        file: path.join(__dirname, '../fixtures/cinemas.js'),
         listen: true
       }
     ])

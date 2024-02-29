@@ -1,109 +1,80 @@
 'use strict'
 const assert = require('node:assert')
 const { test } = require('node:test')
+const path = require('node:path')
 
 const { compose } = require('../lib')
-const { startGraphqlService, graphqlRequest, startRouter } = require('./helper')
-
-test('should build a service using composer without subscriptions', async (t) => {
-  let calls = 0
-
-  const service = await startGraphqlService(t, {
-    mercurius: {
-      schema: `
-    type Query {
-      add(x: Int, y: Int): Int
-    }`,
-      resolvers: {
-        Query: {
-          async add (_, { x, y }) {
-            calls++
-            return x + y
-          }
-        }
-      }
-    }
-  })
-  const host = await service.listen()
-
-  const composer = await compose({
-    subgraphs: [{ server: { host } }]
-  })
-
-  const router = await startGraphqlService(t, {
-    mercurius: {
-      schema: composer.toSdl(),
-      resolvers: composer.resolvers
-    }
-  })
-
-  await router.listen({ port: 0 })
-
-  const query = '{ add(x: 2, y: 2) }'
-  const data = await graphqlRequest(router, query)
-  assert.deepStrictEqual(data, { add: 4 })
-
-  assert.strictEqual(calls, 1)
-})
+const { graphqlRequest, createGraphqlServices, createComposerService } = require('./helper')
 
 test('should use the defaultArgsAdapter provided in options', async (t) => {
   const query = '{ getReviewBook(id: 1) { title } }'
   const expectedResponse = { getReviewBook: { title: 'A Book About Things That Never Happened' } }
 
   let calls = 0
-  const overrides = {
+
+  const services = await createGraphqlServices(t, [
+    {
+      name: 'books-subgraph',
+      file: path.join(__dirname, 'fixtures/books.js'),
+      listen: true
+    },
+    {
+      name: 'reviews-subgraph',
+      file: path.join(__dirname, 'fixtures/reviews.js'),
+      listen: true
+    }
+  ])
+  const options = {
     defaultArgsAdapter: (partialResults) => {
       calls++
-      return { ids: partialResults.map(r => r.id) }
+      return { ids: partialResults.map(r => r.bookId) }
     },
-    subgraphs: {
-      'books-subgraph': {
-        entities: {
-          Book: {
-            pkey: 'id',
-            resolver: {
-              name: 'getBooksByIds',
-              argsAdapter: undefined
-            }
-          }
-        }
-      }
-    }
+    subgraphs: services.map(service => ({
+      entities: service.config.entities,
+      name: service.name,
+      server: { host: service.host }
+    }))
   }
 
-  const router = await startRouter(t, ['books-subgraph', 'reviews-subgraph'], overrides)
+  options.subgraphs[0].entities.Book.resolver.argsAdapter = undefined
 
-  const response = await graphqlRequest(router, query)
+  const { service } = await createComposerService(t, { compose, options })
+  const result = await graphqlRequest(service, query)
 
   assert.strictEqual(calls, 1)
-  assert.deepStrictEqual(response, expectedResponse)
+  assert.deepStrictEqual(result, expectedResponse)
 })
 
 test('should use the generic argsAdapter if not provided', async (t) => {
   const query = '{ getReviewBook(id: 1) { title } }'
   const expectedResponse = { getReviewBook: { title: 'A Book About Things That Never Happened' } }
 
-  const overrides = {
-    subgraphs: {
-      'books-subgraph': {
-        entities: {
-          Book: {
-            pkey: 'id',
-            resolver: {
-              name: 'getBooksByIds',
-              argsAdapter: undefined
-            }
-          }
-        }
-      }
+  const services = await createGraphqlServices(t, [
+    {
+      name: 'books-subgraph',
+      file: path.join(__dirname, 'fixtures/books.js'),
+      listen: true
+    },
+    {
+      name: 'reviews-subgraph',
+      file: path.join(__dirname, 'fixtures/reviews.js'),
+      listen: true
     }
+  ])
+  const options = {
+    subgraphs: services.map(service => ({
+      entities: service.config.entities,
+      name: service.name,
+      server: { host: service.host }
+    }))
   }
 
-  const router = await startRouter(t, ['books-subgraph', 'reviews-subgraph'], overrides)
+  options.subgraphs[1].entities.Book.resolver.argsAdapter = undefined
 
-  const response = await graphqlRequest(router, query)
+  const { service } = await createComposerService(t, { compose, options })
+  const result = await graphqlRequest(service, query)
 
-  assert.deepStrictEqual(response, expectedResponse)
+  assert.deepStrictEqual(result, expectedResponse)
 })
 
 const cases = [

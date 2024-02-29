@@ -4,40 +4,35 @@ const assert = require('node:assert')
 const { test } = require('node:test')
 const { NoSchemaIntrospectionCustomRule } = require('graphql')
 
-const { compose } = require('../lib')
-const { startGraphqlService } = require('./helper')
+const { compose } = require('../')
+const { createGraphqlServices } = require('./helper')
 
-const service = {
+const gql = {
   schema: 'type Query {\n  add(x: Int, y: Int): Int\n}',
   resolvers: { Query: { add: (_, { x, y }) => x + y } }
 }
 
-test('should get the schema from a subgraph service from composeEndpoint', async (t) => {
-  const expectedSdl = service.schema
+test('should get the schema from a subgraph service from a custom composeEndpoint', async (t) => {
+  const expectedSdl = gql.schema
 
-  const instance = await startGraphqlService(t, {
-    mercurius: {
-      schema: service.schema,
-      resolvers: service.resolvers
-    },
-    exposeIntrospection: {
-      path: '/get-introspection'
-    }
-  })
-  service.host = await instance.listen()
+  const [service] = await createGraphqlServices(t,
+    [{
+      mercurius: { ...gql },
+      exposeIntrospection: { path: '/get-introspection' },
+      listen: true
+    }]
+  )
 
   let errors = 0
   const composer = await compose({
     onSubgraphError: () => { errors++ },
-    subgraphs: [
-      {
-        server: {
-          host: service.host,
-          composeEndpoint: '/get-introspection',
-          graphqlEndpoint: '/graphql'
-        }
+    subgraphs: [{
+      server: {
+        host: service.host,
+        composeEndpoint: '/get-introspection',
+        graphqlEndpoint: '/graphql'
       }
-    ]
+    }]
   })
 
   assert.strictEqual(errors, 0)
@@ -45,28 +40,20 @@ test('should get the schema from a subgraph service from composeEndpoint', async
 })
 
 test('should get the schema from a subgraph service from graphqlEndpoint using introspection query', async (t) => {
-  const expectedSdl = service.schema
+  const expectedSdl = gql.schema
 
-  const instance = await startGraphqlService(t, {
-    mercurius: {
-      schema: service.schema,
-      resolvers: service.resolvers
-    },
-    exposeIntrospection: false
-  })
-  service.host = await instance.listen()
+  const [service] = await createGraphqlServices(t,
+    [{
+      mercurius: { ...gql },
+      exposeIntrospection: false,
+      listen: true
+    }]
+  )
 
   let errors = 0
   const composer = await compose({
     onSubgraphError: () => { errors++ },
-    subgraphs: [
-      {
-        server: {
-          host: service.host,
-          graphqlEndpoint: '/graphql'
-        }
-      }
-    ]
+    subgraphs: [{ server: { host: service.host } }]
   })
 
   assert.strictEqual(errors, 0)
@@ -74,20 +61,18 @@ test('should get the schema from a subgraph service from graphqlEndpoint using i
 })
 
 test('should get error when is not possible to get the schema from a subgraph neither from composeEndpoint and using introspection query', async (t) => {
-  const instance = await startGraphqlService(t, {
-    mercurius: {
-      schema: service.schema,
-      resolvers: service.resolvers,
-      validationRules: [NoSchemaIntrospectionCustomRule]
-    },
-    exposeIntrospection: false
-  })
-  service.host = await instance.listen()
+  const [service] = await createGraphqlServices(t,
+    [{
+      mercurius: { ...gql, validationRules: [NoSchemaIntrospectionCustomRule] },
+      exposeIntrospection: false,
+      listen: true
+    }]
+  )
 
   let errors = 0
   await compose({
     onSubgraphError: (error) => {
-      const expectedErrorMessage = `Could not process schema from '${service.host}'`
+      const expectedErrorMessage = `Could not process schema for subgraph '#0' from '${service.host}'`
       const expectedErrorCauseMessage = `Invalid introspection schema received from ${service.host}/custom-compose, ${service.host}/graphql`
       assert.strictEqual(error.message, expectedErrorMessage)
       assert.strictEqual(error.cause.message, expectedErrorCauseMessage)
@@ -100,20 +85,18 @@ test('should get error when is not possible to get the schema from a subgraph ne
 })
 
 test('should get error when composeEndpoint and graphqlEndpoint are both unreachable', async (t) => {
-  const instance = await startGraphqlService(t, {
-    mercurius: {
-      schema: service.schema,
-      resolvers: service.resolvers,
-      path: '/graph-custom-path'
-    },
-    exposeIntrospection: false
-  })
-  service.host = await instance.listen()
+  const [service] = await createGraphqlServices(t,
+    [{
+      mercurius: { ...gql, path: '/graph-custom-path' },
+      exposeIntrospection: false,
+      listen: true
+    }]
+  )
 
   let errors = 0
   await compose({
     onSubgraphError: (error) => {
-      const expectedErrorMessage = `Could not process schema from '${service.host}'`
+      const expectedErrorMessage = `Could not process schema for subgraph '#0' from '${service.host}'`
       const expectedErrorCauseMessage = `Unable to get schema from ${service.host}/.well-known/graphql-composition (response 404) nor ${service.host}/graphql (response 404)`
       assert.strictEqual(error.message, expectedErrorMessage)
       assert.strictEqual(error.cause.message, expectedErrorCauseMessage)
