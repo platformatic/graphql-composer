@@ -215,6 +215,11 @@ test('should run a query that has null results', async (t) => {
 test('query capabilities', async t => {
   const capabilities = [
     {
+      name: 'should run a query with different types in arguments',
+      query: 'query { getBooks(limit: 1, orderBy: [{ field: genre, direction: DESC }]) { title } }',
+      result: { getBooks: [{ title: 'A Book About Things That Never Happened' }] }
+    },
+    {
       name: 'should run a query with a literal argument',
       query: 'query { getBook(id: 1) { id genre } }',
       result: { getBook: { id: '1', genre: 'FICTION' } }
