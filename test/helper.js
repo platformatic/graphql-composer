@@ -21,11 +21,12 @@ async function createComposerService (t, { compose, options }) {
   return { composer, service }
 }
 
-async function graphqlRequest (service, query, variables) {
+async function graphqlRequest (service, query, variables, headers) {
   const response = await service.inject({
     path: '/graphql',
     method: 'POST',
     headers: {
+      ...headers,
       'content-type': 'application/json'
     },
     body: JSON.stringify({ query, variables })
