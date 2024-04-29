@@ -7,10 +7,6 @@ const Mercurius = require('mercurius')
 
 const introspectionQuery = getIntrospectionQuery()
 
-const introspectionHandler = async function (req, reply) {
-  return reply.graphql(introspectionQuery)
-}
-
 async function createComposerService (t, { compose, options }) {
   const composer = await compose(options)
   const service = Fastify()
@@ -55,7 +51,9 @@ async function createGraphqlServiceFromFile (t, { file, fastify, exposeIntrospec
   service.register(Mercurius, { schema: config.schema, resolvers: config.resolvers })
 
   if (exposeIntrospection) {
-    service.get(exposeIntrospection.path || '/.well-known/graphql-composition', exposeIntrospection.handler || introspectionHandler)
+    service.get(exposeIntrospection.path || '/.well-known/graphql-composition', async function (req, reply) {
+      return reply.graphql(introspectionQuery)
+    })
   }
 
   t.after(async () => {
@@ -71,7 +69,9 @@ async function createGraphqlServiceFromConfig (t, { fastify, mercurius, exposeIn
   service.register(Mercurius, mercurius)
 
   if (exposeIntrospection) {
-    service.get(exposeIntrospection.path || '/.well-known/graphql-composition', exposeIntrospection.handler || introspectionHandler)
+    service.get(exposeIntrospection.path || '/.well-known/graphql-composition', async function (req, reply) {
+      return reply.graphql(introspectionQuery)
+    })
   }
 
   t.after(async () => {
@@ -115,4 +115,4 @@ function assertObject (actual, expected) {
   }
 }
 
-module.exports = { graphqlRequest, createComposerService, createGraphqlServices, introspectionHandler, assertObject }
+module.exports = { graphqlRequest, createComposerService, createGraphqlServices, assertObject }

@@ -212,6 +212,42 @@ test('should run a query that has null results', async (t) => {
   assert.deepStrictEqual(result, expectedResult)
 })
 
+test('should pass headers when running a query on a subgraph', async (t) => {
+  const headers = { test: '123' }
+  const query = `
+    query {
+      test
+    }
+  `
+  const expectedResult = '123'
+
+  const [service] = await createGraphqlServices(t,
+    [{
+      mercurius: {
+        schema: 'type Query {\n  test: String\n}',
+        resolvers: {
+          Query: {
+            test: (_, __, { reply: { request: { headers: { test } } } }) => test
+          }
+        }
+      },
+      exposeIntrospection: false,
+      listen: true
+    }]
+  )
+
+  let errors = 0
+  await compose({
+    onSubgraphError: () => { errors++ },
+    subgraphs: [{ server: { host: service.host } }]
+  })
+
+  const { test } = await graphqlRequest(service.service, query, undefined, headers)
+
+  assert.strictEqual(errors, 0)
+  assert.strictEqual(test, expectedResult)
+})
+
 test('query capabilities', async t => {
   const capabilities = [
     {
