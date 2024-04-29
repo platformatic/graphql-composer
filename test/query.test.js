@@ -212,17 +212,20 @@ test('should run a query that has null results', async (t) => {
   assert.deepStrictEqual(result, expectedResult)
 })
 
-test('should pass headers when running a query on a subgraph', async (t) => {
+test('should run a query with headers', async (t) => {
   const headers = { test: '123' }
+
   const query = `
     query {
       test
     }
   `
-  const expectedResult = '123'
+  const expectedResult = {
+    test: '123'
+  }
 
-  const [service] = await createGraphqlServices(t,
-    [{
+  const services = await createGraphqlServices(t, [
+    {
       mercurius: {
         schema: 'type Query {\n  test: String\n}',
         resolvers: {
@@ -233,19 +236,18 @@ test('should pass headers when running a query on a subgraph', async (t) => {
       },
       exposeIntrospection: false,
       listen: true
-    }]
-  )
+    }
+  ])
+  const options = {
+    subgraphs: services.map(service => ({
+      server: { host: service.host }
+    }))
+  }
 
-  let errors = 0
-  await compose({
-    onSubgraphError: () => { errors++ },
-    subgraphs: [{ server: { host: service.host } }]
-  })
+  const { service } = await createComposerService(t, { compose, options })
+  const result = await graphqlRequest(service, query, undefined, headers)
 
-  const { test } = await graphqlRequest(service.service, query, undefined, headers)
-
-  assert.strictEqual(errors, 0)
-  assert.strictEqual(test, expectedResult)
+  assert.deepStrictEqual(result, expectedResult)
 })
 
 test('query capabilities', async t => {
