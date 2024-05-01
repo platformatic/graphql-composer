@@ -212,6 +212,44 @@ test('should run a query that has null results', async (t) => {
   assert.deepStrictEqual(result, expectedResult)
 })
 
+test('should run a query with headers', async (t) => {
+  const headers = { test: '123' }
+
+  const query = `
+    query {
+      test
+    }
+  `
+  const expectedResult = {
+    test: '123'
+  }
+
+  const services = await createGraphqlServices(t, [
+    {
+      mercurius: {
+        schema: 'type Query {\n  test: String\n}',
+        resolvers: {
+          Query: {
+            test: (_, __, { reply: { request: { headers: { test } } } }) => test
+          }
+        }
+      },
+      exposeIntrospection: false,
+      listen: true
+    }
+  ])
+  const options = {
+    subgraphs: services.map(service => ({
+      server: { host: service.host }
+    }))
+  }
+
+  const { service } = await createComposerService(t, { compose, options })
+  const result = await graphqlRequest(service, query, undefined, headers)
+
+  assert.deepStrictEqual(result, expectedResult)
+})
+
 test('query capabilities', async t => {
   const capabilities = [
     {
