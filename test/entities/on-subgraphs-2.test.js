@@ -27,7 +27,7 @@ const booksSubgraph = () => {
   type Query {
     getBook(id: ID!): Book
     getBookTitle(id: ID!): String
-    getBooksByIds(ids: [ID]!): [Book]!
+    getBooksByIds(ids: [ID]!): [Book!]!
   }
 `
   const data = { library: null }
