@@ -1,6 +1,10 @@
 'use strict'
 
 const schema = `
+  input AuthorTodoInput {
+    task: String
+  }
+
   input AuthorAddressInput {
     street: String!
     city: String!
@@ -11,6 +15,7 @@ const schema = `
     firstName: String!
     lastName: String!
     address: AuthorAddressInput
+    todos: [AuthorTodoInput]
   }
   
   type AuthorTodo {
