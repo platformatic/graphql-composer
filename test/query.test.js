@@ -458,7 +458,7 @@ test('mutations', async (t) => {
             city: 'Johnson City',
             zip: 4200,
             country: 'US',
-            public: true
+            mainResidence: true
           },
           todos: [
             { task: 'Write another book' },

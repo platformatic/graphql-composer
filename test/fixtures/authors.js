@@ -19,7 +19,7 @@ const schema = `
     city: String!
     zip: Int!
     country: Country!
-    public: Boolean!
+    mainResidence: Boolean!
   }
   
   input AuthorInput {
