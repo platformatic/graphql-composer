@@ -17,8 +17,9 @@ const schema = `
   input AuthorAddressInput {
     street: String!
     city: String!
-    zip: String!
+    zip: Int!
     country: Country!
+    public: Boolean!
   }
   
   input AuthorInput {
