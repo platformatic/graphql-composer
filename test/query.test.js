@@ -456,7 +456,8 @@ test('mutations', async (t) => {
           address: {
             street: 'Johnson Street 5',
             city: 'Johnson City',
-            zip: '4200'
+            zip: '4200',
+            country: 'US'
           },
           todos: [
             { task: 'Write another book' },
