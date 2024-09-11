@@ -475,6 +475,31 @@ test('mutations', async (t) => {
     },
 
     {
+      name: 'should run a mutation query with nested variables including null values',
+      query: `
+      mutation CreateAuthor($author: AuthorInput!) {
+        createAuthor(author: $author) {
+          id name { firstName lastName }
+        }
+      }
+      `,
+      variables: {
+        author: {
+          firstName: 'John',
+          lastName: 'Johnson',
+          address: null,
+          todos: []
+        }
+      },
+      result: {
+        createAuthor: {
+          id: '3',
+          name: { firstName: 'John', lastName: 'Johnson' }
+        }
+      }
+    },
+
+    {
       name: 'should run a mutation query with input object literal',
       query: `
       mutation {
