@@ -1,11 +1,23 @@
 'use strict'
 
 const schema = `
+  input AuthorTodoInput {
+    task: String
+  }
+
+  input AuthorAddressInput {
+    street: String!
+    city: String!
+    zip: String!
+  }
+  
   input AuthorInput {
     firstName: String!
     lastName: String!
+    address: AuthorAddressInput
+    todos: [AuthorTodoInput]
   }
-
+  
   type AuthorTodo {
     task: String
   }

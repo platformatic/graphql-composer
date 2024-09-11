@@ -4,20 +4,29 @@ const assert = require('node:assert')
 const path = require('node:path')
 const { test } = require('node:test')
 
-const { createComposerService, createGraphqlServices, graphqlRequest } = require('./helper')
+const {
+  createComposerService,
+  createGraphqlServices,
+  graphqlRequest
+} = require('./helper')
 const { compose } = require('../lib')
 
-test('should run a query to a single subgraph', async t => {
-  const query = '{ artists (where: { id: { in: ["103","102"] } }) { lastName } }'
-  const expectedResult = { artists: [{ lastName: 'Benigni' }, { lastName: 'Molko' }] }
+test('should run a query to a single subgraph', async (t) => {
+  const query =
+    '{ artists (where: { id: { in: ["103","102"] } }) { lastName } }'
+  const expectedResult = {
+    artists: [{ lastName: 'Benigni' }, { lastName: 'Molko' }]
+  }
 
-  const services = await createGraphqlServices(t, [{
-    name: 'artists-subgraph',
-    file: path.join(__dirname, 'fixtures/artists.js'),
-    listen: true
-  }])
+  const services = await createGraphqlServices(t, [
+    {
+      name: 'artists-subgraph',
+      file: path.join(__dirname, 'fixtures/artists.js'),
+      listen: true
+    }
+  ])
   const options = {
-    subgraphs: services.map(service => ({
+    subgraphs: services.map((service) => ({
       name: service.name,
       server: { host: service.host }
     }))
@@ -37,15 +46,22 @@ test('should run a query to a single subgraph, with a nested type', async (t) =>
       }
     }
   `
-  const expectedResult = { list: [{ id: '1', name: { firstName: 'Peter', lastName: 'Pluck' } }, { id: '2', name: { firstName: 'John', lastName: 'Writer' } }] }
+  const expectedResult = {
+    list: [
+      { id: '1', name: { firstName: 'Peter', lastName: 'Pluck' } },
+      { id: '2', name: { firstName: 'John', lastName: 'Writer' } }
+    ]
+  }
 
-  const services = await createGraphqlServices(t, [{
-    name: 'authors-subgraph',
-    file: path.join(__dirname, 'fixtures/authors.js'),
-    listen: true
-  }])
+  const services = await createGraphqlServices(t, [
+    {
+      name: 'authors-subgraph',
+      file: path.join(__dirname, 'fixtures/authors.js'),
+      listen: true
+    }
+  ])
   const options = {
-    subgraphs: services.map(service => ({
+    subgraphs: services.map((service) => ({
       name: service.name,
       server: { host: service.host }
     }))
@@ -57,9 +73,16 @@ test('should run a query to a single subgraph, with a nested type', async (t) =>
   assert.deepStrictEqual(result, expectedResult)
 })
 
-test('should run a query with single result on multiple subgraphs', async t => {
+test('should run a query with single result on multiple subgraphs', async (t) => {
   const query = '{ getBook(id: 1) { id, title, genre, rate } }'
-  const expectedResult = { getBook: { id: '1', title: 'A Book About Things That Never Happened', genre: 'FICTION', rate: 3 } }
+  const expectedResult = {
+    getBook: {
+      id: '1',
+      title: 'A Book About Things That Never Happened',
+      genre: 'FICTION',
+      rate: 3
+    }
+  }
 
   const services = await createGraphqlServices(t, [
     {
@@ -74,7 +97,7 @@ test('should run a query with single result on multiple subgraphs', async t => {
     }
   ])
   const options = {
-    subgraphs: services.map(service => ({
+    subgraphs: services.map((service) => ({
       entities: service.config.entities,
       name: service.name,
       server: { host: service.host }
@@ -87,10 +110,9 @@ test('should run a query with single result on multiple subgraphs', async t => {
   assert.deepStrictEqual(result, expectedResult)
 })
 
-test('should run a query with list result on multiple subgraphs', async t => {
+test('should run a query with list result on multiple subgraphs', async (t) => {
   const query = '{ getBooksByIds(ids: [1,2,3]) { id, title, rate } }'
   const expectedResult = {
-
     getBooksByIds: [
       {
         id: '1',
@@ -118,7 +140,7 @@ test('should run a query with list result on multiple subgraphs', async t => {
     }
   ])
   const options = {
-    subgraphs: services.map(service => ({
+    subgraphs: services.map((service) => ({
       entities: service.config.entities,
       name: service.name,
       server: { host: service.host }
@@ -132,8 +154,7 @@ test('should run a query with list result on multiple subgraphs', async t => {
 })
 
 test('should run a query that has nulls in results', async (t) => {
-  const query =
-    `{
+  const query = `{
         getReviewBookByIds(ids: [99,1,101,2]) {
           title
           reviews { rating }
@@ -166,7 +187,7 @@ test('should run a query that has nulls in results', async (t) => {
     }
   ])
   const options = {
-    subgraphs: services.map(service => ({
+    subgraphs: services.map((service) => ({
       entities: service.config.entities,
       name: service.name,
       server: { host: service.host }
@@ -180,7 +201,8 @@ test('should run a query that has nulls in results', async (t) => {
 })
 
 test('should run a query that has null results', async (t) => {
-  const query = '{ getReviewBookByIds(ids: [-1,-2,-3]) { title reviews { rating } } }'
+  const query =
+    '{ getReviewBookByIds(ids: [-1,-2,-3]) { title reviews { rating } } }'
 
   const expectedResult = {
     getReviewBookByIds: []
@@ -199,7 +221,7 @@ test('should run a query that has null results', async (t) => {
     }
   ])
   const options = {
-    subgraphs: services.map(service => ({
+    subgraphs: services.map((service) => ({
       entities: service.config.entities,
       name: service.name,
       server: { host: service.host }
@@ -230,7 +252,17 @@ test('should run a query with headers', async (t) => {
         schema: 'type Query {\n  test: String\n}',
         resolvers: {
           Query: {
-            test: (_, __, { reply: { request: { headers: { test } } } }) => test
+            test: (
+              _,
+              __,
+              {
+                reply: {
+                  request: {
+                    headers: { test }
+                  }
+                }
+              }
+            ) => test
           }
         }
       },
@@ -239,7 +271,7 @@ test('should run a query with headers', async (t) => {
     }
   ])
   const options = {
-    subgraphs: services.map(service => ({
+    subgraphs: services.map((service) => ({
       server: { host: service.host }
     }))
   }
@@ -250,12 +282,15 @@ test('should run a query with headers', async (t) => {
   assert.deepStrictEqual(result, expectedResult)
 })
 
-test('query capabilities', async t => {
+test('query capabilities', async (t) => {
   const capabilities = [
     {
       name: 'should run a query with different types in arguments',
-      query: 'query { getBooks(limit: 1, orderBy: [{ field: genre, direction: DESC }]) { title } }',
-      result: { getBooks: [{ title: 'A Book About Things That Never Happened' }] }
+      query:
+        'query { getBooks(limit: 1, orderBy: [{ field: genre, direction: DESC }]) { title } }',
+      result: {
+        getBooks: [{ title: 'A Book About Things That Never Happened' }]
+      }
     },
     {
       name: 'should run a query with a literal argument',
@@ -288,26 +323,50 @@ test('query capabilities', async t => {
       query: `fragment bookFields on Book { id title genre }
         query GetBookById($id: ID!) { getBook(id: $id) { ...bookFields } }`,
       variables: { id: 1 },
-      result: { getBook: { id: '1', genre: 'FICTION', title: 'A Book About Things That Never Happened' } }
+      result: {
+        getBook: {
+          id: '1',
+          genre: 'FICTION',
+          title: 'A Book About Things That Never Happened'
+        }
+      }
     },
     {
       name: 'should run a query with a literal argument',
-      query: 'query { list { id name { firstName lastName } todos (id: 2) { task } } }',
+      query:
+        'query { list { id name { firstName lastName } todos (id: 2) { task } } }',
       result: {
         list: [
-          { id: '1', name: { firstName: 'Peter', lastName: 'Pluck' }, todos: [{ task: 'Get really creative' }] },
-          { id: '2', name: { firstName: 'John', lastName: 'Writer' }, todos: [{ task: 'Get really creative' }] }
+          {
+            id: '1',
+            name: { firstName: 'Peter', lastName: 'Pluck' },
+            todos: [{ task: 'Get really creative' }]
+          },
+          {
+            id: '2',
+            name: { firstName: 'John', lastName: 'Writer' },
+            todos: [{ task: 'Get really creative' }]
+          }
         ]
       }
     },
     {
       name: 'should run a query query with a variable argument',
-      query: 'query GetAuthorListWithTodos ($id: ID!) { list { id name { firstName lastName } todos(id: $id) { task } } }',
+      query:
+        'query GetAuthorListWithTodos ($id: ID!) { list { id name { firstName lastName } todos(id: $id) { task } } }',
       variables: { id: 1 },
       result: {
         list: [
-          { id: '1', name: { firstName: 'Peter', lastName: 'Pluck' }, todos: [{ task: 'Write another book' }] },
-          { id: '2', name: { firstName: 'John', lastName: 'Writer' }, todos: [{ task: 'Write another book' }] }
+          {
+            id: '1',
+            name: { firstName: 'Peter', lastName: 'Pluck' },
+            todos: [{ task: 'Write another book' }]
+          },
+          {
+            id: '2',
+            name: { firstName: 'John', lastName: 'Writer' },
+            todos: [{ task: 'Write another book' }]
+          }
         ]
       }
     },
@@ -319,7 +378,10 @@ test('query capabilities', async t => {
       }`,
       result: {
         getBook: { id: '2', genre: 'NONFICTION' },
-        list: [{ id: '1', name: { firstName: 'Peter', lastName: 'Pluck' } }, { id: '2', name: { firstName: 'John', lastName: 'Writer' } }]
+        list: [
+          { id: '1', name: { firstName: 'Peter', lastName: 'Pluck' } },
+          { id: '2', name: { firstName: 'John', lastName: 'Writer' } }
+        ]
       }
     }
   ]
@@ -339,7 +401,7 @@ test('query capabilities', async t => {
       }
     ])
     const options = {
-      subgraphs: services.map(service => ({
+      subgraphs: services.map((service) => ({
         name: service.name,
         server: { host: service.host }
       }))
@@ -358,7 +420,7 @@ test('query capabilities', async t => {
   }
 })
 
-test('mutations', async t => {
+test('mutations', async (t) => {
   const mutations = [
     {
       name: 'should run a mutation query with variables',
@@ -379,6 +441,38 @@ test('mutations', async t => {
     },
 
     {
+      name: 'should run a mutation query with nested variables',
+      query: `
+      mutation CreateAuthor($author: AuthorInput!) {
+        createAuthor(author: $author) {
+          id name { firstName lastName }
+        }
+      }
+      `,
+      variables: {
+        author: {
+          firstName: 'John',
+          lastName: 'Johnson',
+          address: {
+            street: 'Johnson Street 5',
+            city: 'Johnson City',
+            zip: '4200'
+          },
+          todos: [
+            { task: 'Write another book' },
+            { task: 'Get really creative' }
+          ]
+        }
+      },
+      result: {
+        createAuthor: {
+          id: '3',
+          name: { firstName: 'John', lastName: 'Johnson' }
+        }
+      }
+    },
+
+    {
       name: 'should run a mutation query with input object literal',
       query: `
       mutation {
@@ -387,7 +481,12 @@ test('mutations', async t => {
         }
       }
       `,
-      result: { createAuthor: { id: '3', name: { firstName: 'Tuco', lastName: 'Gustavo' } } }
+      result: {
+        createAuthor: {
+          id: '3',
+          name: { firstName: 'Tuco', lastName: 'Gustavo' }
+        }
+      }
     },
 
     {
@@ -403,16 +502,19 @@ test('mutations', async t => {
       }
       `,
       result: {
-        batchCreateAuthor: [{
-          id: '3',
-          name: { firstName: 'Ernesto', lastName: 'de la Cruz' }
-        },
-        {
-          id: '4',
-          name: { firstName: 'Hector', lastName: 'Rivera' }
-        }]
+        batchCreateAuthor: [
+          {
+            id: '3',
+            name: { firstName: 'Ernesto', lastName: 'de la Cruz' }
+          },
+          {
+            id: '4',
+            name: { firstName: 'Hector', lastName: 'Rivera' }
+          }
+        ]
       }
-    }]
+    }
+  ]
 
   let service, services
   t.before(async () => {
@@ -429,7 +531,7 @@ test('mutations', async t => {
       }
     ])
     const options = {
-      subgraphs: services.map(service => ({
+      subgraphs: services.map((service) => ({
         name: service.name,
         server: { host: service.host }
       }))
@@ -440,7 +542,7 @@ test('mutations', async t => {
   })
 
   t.beforeEach(() => {
-    services.forEach(s => s.config.reset())
+    services.forEach((s) => s.config.reset())
   })
 
   for (const c of mutations) {
