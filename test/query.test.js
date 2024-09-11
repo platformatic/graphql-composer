@@ -515,6 +515,35 @@ test('mutations', async (t) => {
           }
         ]
       }
+    },
+
+    {
+      name: 'should run a mutation query with an array as input variable',
+      query: `
+      mutation BatchCreateAuthor($authors: [AuthorInput]!) {
+        batchCreateAuthor(authors: $authors) {
+          id name { firstName lastName }
+        }
+      }
+      `,
+      variables: {
+        authors: [
+          { firstName: 'Ernesto', lastName: 'de la Cruz' },
+          { firstName: 'Hector', lastName: 'Rivera' }
+        ]
+      },
+      result: {
+        batchCreateAuthor: [
+          {
+            id: '3',
+            name: { firstName: 'Ernesto', lastName: 'de la Cruz' }
+          },
+          {
+            id: '4',
+            name: { firstName: 'Hector', lastName: 'Rivera' }
+          }
+        ]
+      }
     }
   ]
 

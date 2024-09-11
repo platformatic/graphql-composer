@@ -145,7 +145,7 @@ const resolvers = {
         }
       })
 
-      return true
+      return { success: true }
     }
   },
   Author: {
