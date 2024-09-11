@@ -5,10 +5,21 @@ const schema = `
     task: String
   }
 
+  enum Country {
+    US
+    CA
+    UK
+    DE
+    FR
+    ES
+  }
+
   input AuthorAddressInput {
     street: String!
     city: String!
-    zip: String!
+    zip: Int!
+    country: Country!
+    mainResidence: Boolean!
   }
   
   input AuthorInput {
@@ -134,7 +145,7 @@ const resolvers = {
         }
       })
 
-      return true
+      return { success: true }
     }
   },
   Author: {
