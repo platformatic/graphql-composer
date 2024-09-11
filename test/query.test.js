@@ -456,12 +456,39 @@ test('mutations', async (t) => {
           address: {
             street: 'Johnson Street 5',
             city: 'Johnson City',
-            zip: '4200'
+            zip: 4200,
+            country: 'US',
+            mainResidence: true
           },
           todos: [
             { task: 'Write another book' },
             { task: 'Get really creative' }
           ]
+        }
+      },
+      result: {
+        createAuthor: {
+          id: '3',
+          name: { firstName: 'John', lastName: 'Johnson' }
+        }
+      }
+    },
+
+    {
+      name: 'should run a mutation query with nested variables including null values',
+      query: `
+      mutation CreateAuthor($author: AuthorInput!) {
+        createAuthor(author: $author) {
+          id name { firstName lastName }
+        }
+      }
+      `,
+      variables: {
+        author: {
+          firstName: 'John',
+          lastName: 'Johnson',
+          address: null,
+          todos: []
         }
       },
       result: {
@@ -501,6 +528,35 @@ test('mutations', async (t) => {
         }
       }
       `,
+      result: {
+        batchCreateAuthor: [
+          {
+            id: '3',
+            name: { firstName: 'Ernesto', lastName: 'de la Cruz' }
+          },
+          {
+            id: '4',
+            name: { firstName: 'Hector', lastName: 'Rivera' }
+          }
+        ]
+      }
+    },
+
+    {
+      name: 'should run a mutation query with an array as input variable',
+      query: `
+      mutation BatchCreateAuthor($authors: [AuthorInput]!) {
+        batchCreateAuthor(authors: $authors) {
+          id name { firstName lastName }
+        }
+      }
+      `,
+      variables: {
+        authors: [
+          { firstName: 'Ernesto', lastName: 'de la Cruz' },
+          { firstName: 'Hector', lastName: 'Rivera' }
+        ]
+      },
       result: {
         batchCreateAuthor: [
           {
