@@ -179,8 +179,7 @@ test('makeGraphqlRequest should throw an error if the subgraph context returns a
         ...gql,
         context: () => {
           throw new Error('Error in context')
-        },
-        validationRules: [NoSchemaIntrospectionCustomRule]
+        }
       },
       exposeIntrospection: false,
       listen: true
