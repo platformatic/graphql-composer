@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "abstract-logger": "^0.2.5",
-    "fastify": "^5.0.0-alpha.4",
+    "fastify": "^5.0.0",
     "graphql": "^16.8.1",
     "mercurius": "^15.0.0",
     "metaline": "^1.1.0",
