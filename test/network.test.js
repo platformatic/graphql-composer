@@ -6,6 +6,7 @@ const { NoSchemaIntrospectionCustomRule } = require('graphql')
 
 const { compose } = require('../')
 const { createGraphqlServices } = require('./helper')
+const { makeGraphqlRequest } = require('../lib/network')
 
 const gql = {
   schema: 'type Query {\n  add(x: Int, y: Int): Int\n}',
@@ -106,4 +107,116 @@ test('should get error when composeEndpoint and graphqlEndpoint are both unreach
   })
 
   assert.strictEqual(errors, 1)
+})
+
+test('makeGraphqlRequest should return data for a valid query', async (t) => {
+  const [service] = await createGraphqlServices(t,
+    [{
+      mercurius: { ...gql },
+      exposeIntrospection: false,
+      listen: true
+    }]
+  )
+
+  const query = '{ add(x: 1, y: 2) }'
+  const data = await makeGraphqlRequest({
+    server: { host: service.host, graphqlEndpoint: '/graphql' },
+    headers: {},
+    query
+  })
+
+  assert.deepStrictEqual(data, { add: 3 })
+})
+
+test('makeGraphqlRequest should throw an error for a query with errors', async (t) => {
+  const [service] = await createGraphqlServices(t,
+    [{
+      mercurius: { ...gql },
+      exposeIntrospection: false,
+      listen: true
+    }]
+  )
+
+  const query = '{ subtract(x: 1, y: 2) }' // Invalid query
+  await assert.rejects(
+    makeGraphqlRequest({
+      server: { host: service.host, graphqlEndpoint: '/graphql' },
+      headers: {},
+      query
+    }),
+    {
+      message: 'Cannot query field "subtract" on type "Query".'
+    }
+  )
+})
+
+test('makeGraphqlRequest should throw an error if the subgraph returns an error', async (t) => {
+  const [service] = await createGraphqlServices(t,
+    [{
+      mercurius: { ...gql, validationRules: [NoSchemaIntrospectionCustomRule] },
+      exposeIntrospection: false,
+      listen: true
+    }]
+  )
+
+  const query = '{ __schema { queryType { name } } }'
+  await assert.rejects(
+    makeGraphqlRequest({
+      server: { host: service.host, graphqlEndpoint: '/graphql' },
+      headers: {},
+      query
+    }),
+    {
+      message: 'GraphQL introspection has been disabled, but the requested query contained the field "__schema".'
+    }
+  )
+})
+
+test('makeGraphqlRequest should throw an error if the subgraph context returns an error', async (t) => {
+  const [service] = await createGraphqlServices(t,
+    [{
+      mercurius: {
+        ...gql,
+        context: () => {
+          throw new Error('Error in context')
+        }
+      },
+      exposeIntrospection: false,
+      listen: true
+    }]
+  )
+
+  const query = '{ add(x: 1, y: 2) }'
+  await assert.rejects(
+    makeGraphqlRequest({
+      server: { host: service.host, graphqlEndpoint: '/graphql' },
+      headers: {},
+      query
+    }),
+    {
+      message: 'Error in context'
+    }
+  )
+})
+
+test('makeGraphqlRequest should throw an error if the response contains an error', async (t) => {
+  const [service] = await createGraphqlServices(t,
+    [{
+      mercurius: { ...gql },
+      exposeIntrospection: false,
+      listen: true
+    }]
+  )
+
+  const query = '{ add(x: 1, y: "two") }' // Invalid argument type
+  await assert.rejects(
+    makeGraphqlRequest({
+      server: { host: service.host, graphqlEndpoint: '/graphql' },
+      headers: {},
+      query
+    }),
+    {
+      message: 'Int cannot represent non-integer value: "two"'
+    }
+  )
 })
