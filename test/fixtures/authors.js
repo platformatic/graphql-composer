@@ -53,10 +53,21 @@ const schema = `
     list: [Author]
   }
 
+  interface BaseError {
+    message: String!
+  }
+
+  type NotFoundError implements BaseError {
+    message: String!
+  }
+
+  union UpdateAuthorAddressResponse = Author | NotFoundError
+
   type Mutation {
     createAuthor(author: AuthorInput!): Author!
     batchCreateAuthor(authors: [AuthorInput]!): [Author]!
     publishBlogPost(authorId: ID!): Boolean!
+    updateAuthorAddress(authorId: ID!, address: AuthorAddressInput!): UpdateAuthorAddressResponse!
   }
 `
 
@@ -145,7 +156,23 @@ const resolvers = {
         }
       })
 
-      return { success: true }
+      return true
+    },
+
+    async updateAuthorAddress (_, { authorId, address }, context) {
+      const author = data.authors[authorId]
+      if (!author) {
+        return {
+          __typename: 'NotFoundError',
+          message: 'Author not found'
+        }
+      }
+
+      // we actually don't update the author, just return it
+      return {
+        __typename: 'Author',
+        ...author
+      }
     }
   },
   Author: {
