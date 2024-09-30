@@ -569,6 +569,106 @@ test('mutations', async (t) => {
           }
         ]
       }
+    },
+
+    {
+      name: 'should run a mutation query with union type response',
+      query: `
+      mutation UpdateAuthorAddress($authorId: ID!, $address: AuthorAddressInput!) {
+        updateAuthorAddress(authorId: $authorId, address: $address) {
+          __typename
+          ...on Author {
+            id name { firstName lastName }
+          }
+          ... on NotFoundError {
+            message
+          }
+        }
+      }
+      `,
+      variables: {
+        authorId: '1',
+        address: {
+          street: 'Johnson Street 5',
+          city: 'Johnson City',
+          zip: 4200,
+          country: 'US',
+          mainResidence: true
+        }
+      },
+      result: {
+        updateAuthorAddress: {
+          __typename: 'Author',
+          id: '1',
+          name: { firstName: 'Peter', lastName: 'Pluck' }
+        }
+      }
+    },
+    {
+      name: 'should run a mutation query with union type response and return NotFoundError',
+      query: `
+      mutation UpdateAuthorAddress($authorId: ID!, $address: AuthorAddressInput!) {
+        updateAuthorAddress(authorId: $authorId, address: $address) {
+          __typename
+          ... on Author {
+            id name { firstName lastName }
+          }
+          ... on NotFoundError {
+            message
+          }
+        }
+      }
+      `,
+      variables: {
+        authorId: '99',
+        address: {
+          street: 'Johnson Street 5',
+          city: 'Johnson City',
+          zip: 4200,
+          country: 'US',
+          mainResidence: true
+        }
+      },
+      result: {
+        updateAuthorAddress: {
+          __typename: 'NotFoundError',
+          message: 'Author not found'
+        }
+      }
+    },
+
+    {
+      name: 'should run a mutation query with fragment',
+      query: `
+      fragment authorFields on Author {
+        id name { firstName lastName }
+      }
+      mutation UpdateAuthorAddress($authorId: ID!, $address: AuthorAddressInput!) {
+        updateAuthorAddress(authorId: $authorId, address: $address) {
+          __typename
+          ...authorFields
+          ... on NotFoundError {
+            message
+          }
+        }
+      }
+      `,
+      variables: {
+        authorId: '99',
+        address: {
+          street: 'Johnson Street 5',
+          city: 'Johnson City',
+          zip: 4200,
+          country: 'US',
+          mainResidence: true
+        }
+      },
+      result: {
+        updateAuthorAddress: {
+          __typename: 'NotFoundError',
+          message: 'Author not found'
+        }
+      }
     }
   ]
 
