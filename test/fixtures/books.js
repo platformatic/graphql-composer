@@ -5,10 +5,17 @@ const schema = `
     NONFICTION
   }
 
+  type ChapterData {
+    title: String
+    pageCount: Int
+  }
+
   type Book {
     id: ID!
     title: String
     genre: BookGenre
+    firstChapter: ChapterData
+    lastChapter: ChapterData
   }
 
   enum BookField {
@@ -38,12 +45,28 @@ function reset () {
     1: {
       id: 1,
       title: 'A Book About Things That Never Happened',
-      genre: 'FICTION'
+      genre: 'FICTION',
+      firstChapter: {
+        title: 'The Beginning',
+        pageCount: 20
+      },
+      lastChapter: {
+        title: 'The End',
+        pageCount: 25
+      }
     },
     2: {
       id: 2,
       title: 'A Book About Things That Really Happened',
-      genre: 'NONFICTION'
+      genre: 'NONFICTION',
+      firstChapter: {
+        title: 'Introduction',
+        pageCount: 15
+      },
+      lastChapter: {
+        title: 'Conclusion',
+        pageCount: 18
+      }
     }
   }
 }
