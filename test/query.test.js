@@ -669,6 +669,34 @@ test('mutations', async (t) => {
           message: 'Author not found'
         }
       }
+    },
+
+    {
+      name: 'should run a query with multiple nested selections at the same level',
+      query: `{
+    getBook(id: 1) {
+      firstChapter {
+        title
+        pageCount
+      }
+      lastChapter {
+        title
+        pageCount
+      }
+    }
+  }`,
+      result: {
+        getBook: {
+          firstChapter: {
+            title: 'The Beginning',
+            pageCount: 20
+          },
+          lastChapter: {
+            title: 'The End',
+            pageCount: 25
+          }
+        }
+      }
     }
   ]
 
