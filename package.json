@@ -1,6 +1,6 @@
 {
   "name": "@platformatic/graphql-composer",
-  "version": "0.8.2",
+  "version": "0.9.0",
   "description": "GraphQL API Composer",
   "license": "Apache-2.0",
   "main": "lib/index.js",
