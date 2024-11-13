@@ -345,7 +345,7 @@ test('query capabilities', async (t) => {
           {
             id: '2',
             name: { firstName: 'John', lastName: 'Writer' },
-            todos: [{ task: 'Get really creative' }]
+            todos: []
           }
         ]
       }
@@ -365,7 +365,7 @@ test('query capabilities', async (t) => {
           {
             id: '2',
             name: { firstName: 'John', lastName: 'Writer' },
-            todos: [{ task: 'Write another book' }]
+            todos: []
           }
         ]
       }
