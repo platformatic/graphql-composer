@@ -371,6 +371,26 @@ test('query capabilities', async (t) => {
       }
     },
     {
+      name: 'should run a query query with an optional variable argument that is not provided',
+      query:
+        'query GetAuthorListWithTodos ($id: ID) { list { id name { firstName lastName } todos(id: $id) { task } } }',
+      variables: {},
+      result: {
+        list: [
+          {
+            id: '1',
+            name: { firstName: 'Peter', lastName: 'Pluck' },
+            todos: [{ task: 'Write another book' }, { task: 'Get really creative' }]
+          },
+          {
+            id: '2',
+            name: { firstName: 'John', lastName: 'Writer' },
+            todos: []
+          }
+        ]
+      }
+    },
+    {
       name: 'should run multiple queries in a single request',
       query: `query {
         getBook(id: 2) { id genre }
