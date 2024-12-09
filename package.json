@@ -16,7 +16,7 @@
     "mercurius": "^15.0.0",
     "metaline": "^1.1.0",
     "pino": "^9.0.0",
-    "undici": "^6.6.2"
+    "undici": "^7.0.0"
   },
   "devDependencies": {
     "borp": "^0.18.0",
