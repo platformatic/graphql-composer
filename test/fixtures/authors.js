@@ -41,7 +41,7 @@ const schema = `
   type Author {
     id: ID
     name: AuthorName
-    todos(id: ID!): [AuthorTodo]
+    todos(id: ID): [AuthorTodo]
   }
 
   type BlogPostPublishEvent {
@@ -176,10 +176,10 @@ const resolvers = {
     }
   },
   Author: {
-    async todos (_, { id }) {
-      return Object.values(data.todos).filter((t) => {
-        return String(t.id) === id
-      })
+    async todos (root, { id }) {
+      return Object.values(data.todos).filter((t) =>
+        t.authorId === root.id && (id ? String(t.id) === id : true)
+      )
     }
   }
 }

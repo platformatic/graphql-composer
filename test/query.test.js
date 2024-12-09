@@ -345,7 +345,7 @@ test('query capabilities', async (t) => {
           {
             id: '2',
             name: { firstName: 'John', lastName: 'Writer' },
-            todos: [{ task: 'Get really creative' }]
+            todos: []
           }
         ]
       }
@@ -365,7 +365,27 @@ test('query capabilities', async (t) => {
           {
             id: '2',
             name: { firstName: 'John', lastName: 'Writer' },
-            todos: [{ task: 'Write another book' }]
+            todos: []
+          }
+        ]
+      }
+    },
+    {
+      name: 'should run a query query with an optional variable argument that is not provided',
+      query:
+        'query GetAuthorListWithTodos ($id: ID) { list { id name { firstName lastName } todos(id: $id) { task } } }',
+      variables: {},
+      result: {
+        list: [
+          {
+            id: '1',
+            name: { firstName: 'Peter', lastName: 'Pluck' },
+            todos: [{ task: 'Write another book' }, { task: 'Get really creative' }]
+          },
+          {
+            id: '2',
+            name: { firstName: 'John', lastName: 'Writer' },
+            todos: []
           }
         ]
       }
