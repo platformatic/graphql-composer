@@ -418,7 +418,7 @@ test('entities on subgraph, scenario #3: entities with 1-1, 1-2-m, m-2-m relatio
     },
 
     {
-      name: 'should handle deeply nested queries without returning null (issue #70)',
+      name: 'should handle deeply nested queries without returning null',
       query: '{ artists (ids: ["105"]) { firstName, songs { singer { firstName, songs { title } } } } }',
       result: {
         artists: [{
@@ -430,6 +430,118 @@ test('entities on subgraph, scenario #3: entities with 1-1, 1-2-m, m-2-m relatio
             }
           }]
         }]
+      }
+    },
+
+    {
+      name: 'should keep singer loops populated alongside sibling fields',
+      query: '{ artists (ids: ["103","105"]) { songs { title singer { firstName profession songs { title } } } } }',
+      result: {
+        artists: [
+          {
+            songs: [
+              {
+                title: 'Every you every me',
+                singer: {
+                  firstName: 'Brian',
+                  profession: 'Singer',
+                  songs: [
+                    { title: 'Every you every me' },
+                    { title: 'The bitter end' }
+                  ]
+                }
+              },
+              {
+                title: 'The bitter end',
+                singer: {
+                  firstName: 'Brian',
+                  profession: 'Singer',
+                  songs: [
+                    { title: 'Every you every me' },
+                    { title: 'The bitter end' }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            songs: [
+              {
+                title: 'Nessun dorma',
+                singer: {
+                  firstName: 'Luciano',
+                  profession: 'Singer',
+                  songs: [
+                    { title: 'Nessun dorma' }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+
+    {
+      name: 'should preserve first names across alternating singer chains',
+      query: '{ artists (ids: ["103"]) { songs { singer { firstName songs { singer { firstName songs { title } } } } } } }',
+      result: {
+        artists: [
+          {
+            songs: [
+              {
+                singer: {
+                  firstName: 'Brian',
+                  songs: [
+                    {
+                      singer: {
+                        firstName: 'Brian',
+                        songs: [
+                          { title: 'Every you every me' },
+                          { title: 'The bitter end' }
+                        ]
+                      }
+                    },
+                    {
+                      singer: {
+                        firstName: 'Brian',
+                        songs: [
+                          { title: 'Every you every me' },
+                          { title: 'The bitter end' }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                singer: {
+                  firstName: 'Brian',
+                  songs: [
+                    {
+                      singer: {
+                        firstName: 'Brian',
+                        songs: [
+                          { title: 'Every you every me' },
+                          { title: 'The bitter end' }
+                        ]
+                      }
+                    },
+                    {
+                      singer: {
+                        firstName: 'Brian',
+                        songs: [
+                          { title: 'Every you every me' },
+                          { title: 'The bitter end' }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
       }
     }
   ]
