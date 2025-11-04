@@ -430,8 +430,7 @@ test('entities on subgraph, scenario #3: entities with 1-1, 1-2-m, m-2-m relatio
             }
           }]
         }]
-      },
-      skip: 'Known limitation: entity resolution does not work for entities nested within entity resolver results. See issue #70'
+      }
     }
   ]
 
