@@ -43,6 +43,12 @@ function artistsSubgraph () {
         firstName: 'Brian',
         lastName: 'Molko',
         profession: 'Singer'
+      },
+      105: {
+        id: 105,
+        firstName: 'Luciano',
+        lastName: 'Pavarotti',
+        profession: 'Singer'
       }
     }
   }
@@ -106,6 +112,11 @@ function songsSubgraphs () {
         id: 3,
         title: 'Vieni via con me',
         singerId: 102
+      },
+      4: {
+        id: 4,
+        title: 'Nessun dorma',
+        singerId: 105
       }
     }
   }
@@ -389,6 +400,22 @@ test('entities on subgraph, scenario #3: entities with 1-1, 1-2-m, m-2-m relatio
       name: 'should run a query with insane nested results',
       query: '{ artists (ids: ["103"]) { songs { singer { songs { singer { songs { title } }} } } } }',
       result: { artists: [{ songs: [{ singer: { songs: [{ singer: { songs: [{ title: 'Every you every me' }, { title: 'The bitter end' }] } }, { singer: { songs: [{ title: 'Every you every me' }, { title: 'The bitter end' }] } }] } }, { singer: { songs: [{ singer: { songs: [{ title: 'Every you every me' }, { title: 'The bitter end' }] } }, { singer: { songs: [{ title: 'Every you every me' }, { title: 'The bitter end' }] } }] } }] }] }
+    },
+
+    {
+      name: 'should handle deeply nested queries without returning null',
+      query: '{ artists (ids: ["105"]) { firstName, songs { singer { firstName, songs { title } } } } }',
+      result: {
+        artists: [{
+          firstName: 'Luciano',
+          songs: [{
+            singer: {
+              firstName: 'Luciano',
+              songs: [{ title: 'Nessun dorma' }]
+            }
+          }]
+        }]
+      }
     }
   ]
 
