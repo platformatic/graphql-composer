@@ -43,6 +43,12 @@ function artistsSubgraph () {
         firstName: 'Brian',
         lastName: 'Molko',
         profession: 'Singer'
+      },
+      105: {
+        id: 105,
+        firstName: 'Luciano',
+        lastName: 'Pavarotti',
+        profession: 'Singer'
       }
     }
   }
@@ -60,7 +66,22 @@ function artistsSubgraph () {
   const entities = {
     Artist: {
       resolver: { name: 'artists' },
-      pkey: 'id'
+      pkey: 'id',
+      many: [
+        {
+          type: 'Song',
+          as: 'songs',
+          fkey: 'singerId',
+          pkey: 'id',
+          subgraph: 'songs-subgraph',
+          resolver: {
+            name: 'artistsSongs',
+            argsAdapter: (partialResults) => {
+              return { artistIds: partialResults.map(r => r?.id) }
+            }
+          }
+        }
+      ]
     }
   }
 
@@ -106,6 +127,11 @@ function songsSubgraphs () {
         id: 3,
         title: 'Vieni via con me',
         singerId: 102
+      },
+      4: {
+        id: 4,
+        title: 'Nessun dorma',
+        singerId: 105
       }
     }
   }
@@ -389,11 +415,139 @@ test('entities on subgraph, scenario #3: entities with 1-1, 1-2-m, m-2-m relatio
       name: 'should run a query with insane nested results',
       query: '{ artists (ids: ["103"]) { songs { singer { songs { singer { songs { title } }} } } } }',
       result: { artists: [{ songs: [{ singer: { songs: [{ singer: { songs: [{ title: 'Every you every me' }, { title: 'The bitter end' }] } }, { singer: { songs: [{ title: 'Every you every me' }, { title: 'The bitter end' }] } }] } }, { singer: { songs: [{ singer: { songs: [{ title: 'Every you every me' }, { title: 'The bitter end' }] } }, { singer: { songs: [{ title: 'Every you every me' }, { title: 'The bitter end' }] } }] } }] }] }
+    },
+
+    {
+      name: 'should handle deeply nested queries without returning null',
+      query: '{ artists (ids: ["105"]) { firstName, songs { singer { firstName, songs { title } } } } }',
+      result: {
+        artists: [{
+          firstName: 'Luciano',
+          songs: [{
+            singer: {
+              firstName: 'Luciano',
+              songs: [{ title: 'Nessun dorma' }]
+            }
+          }]
+        }]
+      }
+    },
+
+    {
+      name: 'should keep singer loops populated alongside sibling fields',
+      query: '{ artists (ids: ["103","105"]) { songs { title singer { firstName profession songs { title } } } } }',
+      result: {
+        artists: [
+          {
+            songs: [
+              {
+                title: 'Every you every me',
+                singer: {
+                  firstName: 'Brian',
+                  profession: 'Singer',
+                  songs: [
+                    { title: 'Every you every me' },
+                    { title: 'The bitter end' }
+                  ]
+                }
+              },
+              {
+                title: 'The bitter end',
+                singer: {
+                  firstName: 'Brian',
+                  profession: 'Singer',
+                  songs: [
+                    { title: 'Every you every me' },
+                    { title: 'The bitter end' }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            songs: [
+              {
+                title: 'Nessun dorma',
+                singer: {
+                  firstName: 'Luciano',
+                  profession: 'Singer',
+                  songs: [
+                    { title: 'Nessun dorma' }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+
+    {
+      name: 'should preserve first names across alternating singer chains',
+      query: '{ artists (ids: ["103"]) { songs { singer { firstName songs { singer { firstName songs { title } } } } } } }',
+      result: {
+        artists: [
+          {
+            songs: [
+              {
+                singer: {
+                  firstName: 'Brian',
+                  songs: [
+                    {
+                      singer: {
+                        firstName: 'Brian',
+                        songs: [
+                          { title: 'Every you every me' },
+                          { title: 'The bitter end' }
+                        ]
+                      }
+                    },
+                    {
+                      singer: {
+                        firstName: 'Brian',
+                        songs: [
+                          { title: 'Every you every me' },
+                          { title: 'The bitter end' }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                singer: {
+                  firstName: 'Brian',
+                  songs: [
+                    {
+                      singer: {
+                        firstName: 'Brian',
+                        songs: [
+                          { title: 'Every you every me' },
+                          { title: 'The bitter end' }
+                        ]
+                      }
+                    },
+                    {
+                      singer: {
+                        firstName: 'Brian',
+                        songs: [
+                          { title: 'Every you every me' },
+                          { title: 'The bitter end' }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 
   for (const c of requests) {
-    await t.test(c.name, async (t) => {
+    await t.test(c.name, { skip: c.skip }, async (t) => {
       const result = await graphqlRequest(service, c.query, c.variables)
 
       assert.deepStrictEqual(result, c.result)
