@@ -61,6 +61,39 @@ test('should get the schema from a subgraph service from graphqlEndpoint using i
   assert.strictEqual(composer.toSdl(), expectedSdl)
 })
 
+test('should not repeatedly probe composeEndpoint after first 404 miss', async (t) => {
+  const expectedSdl = gql.schema
+  let composeEndpointHits = 0
+
+  const [service] = await createGraphqlServices(t,
+    [{
+      mercurius: { ...gql },
+      exposeIntrospection: false,
+      onComposeEndpointHit: () => { composeEndpointHits++ },
+      listen: true
+    }]
+  )
+
+  let errors = 0
+  const composer1 = await compose({
+    onSubgraphError: () => { errors++ },
+    subgraphs: [{ server: { host: service.host } }]
+  })
+
+  assert.strictEqual(errors, 0)
+  assert.strictEqual(composeEndpointHits, 1)
+  assert.strictEqual(composer1.toSdl(), expectedSdl)
+
+  const composer2 = await compose({
+    onSubgraphError: () => { errors++ },
+    subgraphs: [{ server: { host: service.host } }]
+  })
+
+  assert.strictEqual(errors, 0)
+  assert.strictEqual(composeEndpointHits, 1)
+  assert.strictEqual(composer2.toSdl(), expectedSdl)
+})
+
 test('should get error when is not possible to get the schema from a subgraph neither from composeEndpoint and using introspection query', async (t) => {
   const [service] = await createGraphqlServices(t,
     [{
