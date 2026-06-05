@@ -5,6 +5,7 @@ const { test } = require('node:test')
 const { NoSchemaIntrospectionCustomRule } = require('graphql')
 
 const { compose } = require('../')
+const { Composer } = require('../lib/composer')
 const { createGraphqlServices } = require('./helper')
 const { makeGraphqlRequest } = require('../lib/network')
 
@@ -61,7 +62,7 @@ test('should get the schema from a subgraph service from graphqlEndpoint using i
   assert.strictEqual(composer.toSdl(), expectedSdl)
 })
 
-test('should not repeatedly probe composeEndpoint after first 404 miss', async (t) => {
+test('should not repeatedly probe composeEndpoint in the same composer instance after first 404 miss', async (t) => {
   const expectedSdl = gql.schema
   let composeEndpointHits = 0
 
@@ -75,23 +76,24 @@ test('should not repeatedly probe composeEndpoint after first 404 miss', async (
   )
 
   let errors = 0
-  const composer1 = await compose({
+  const composer = new Composer({
     onSubgraphError: () => { errors++ },
     subgraphs: [{ server: { host: service.host } }]
   })
 
-  assert.strictEqual(errors, 0)
-  assert.strictEqual(composeEndpointHits, 1)
-  assert.strictEqual(composer1.toSdl(), expectedSdl)
-
-  const composer2 = await compose({
-    onSubgraphError: () => { errors++ },
-    subgraphs: [{ server: { host: service.host } }]
-  })
+  const [schema1] = await composer.fetchSubgraphSchemas()
 
   assert.strictEqual(errors, 0)
   assert.strictEqual(composeEndpointHits, 1)
-  assert.strictEqual(composer2.toSdl(), expectedSdl)
+  schema1.subgraphName = '#0'
+  composer.mergeSchema(schema1)
+  composer.buildMergedSchema()
+  assert.strictEqual(composer.toSdl(), expectedSdl)
+
+  await composer.fetchSubgraphSchemas()
+
+  assert.strictEqual(errors, 0)
+  assert.strictEqual(composeEndpointHits, 1)
 })
 
 test('should get error when is not possible to get the schema from a subgraph neither from composeEndpoint and using introspection query', async (t) => {
