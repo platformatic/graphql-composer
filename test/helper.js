@@ -63,14 +63,21 @@ async function createGraphqlServiceFromFile (t, { file, fastify, exposeIntrospec
   return { service, config }
 }
 
-async function createGraphqlServiceFromConfig (t, { fastify, mercurius, exposeIntrospection = {} }) {
+async function createGraphqlServiceFromConfig (t, { fastify, mercurius, exposeIntrospection = {}, onComposeEndpointHit }) {
   const service = Fastify(fastify ?? { logger: false })
 
   service.register(Mercurius, mercurius)
 
   if (exposeIntrospection) {
     service.get(exposeIntrospection.path || '/.well-known/graphql-composition', async function (req, reply) {
+      onComposeEndpointHit?.()
       return reply.graphql(introspectionQuery)
+    })
+  } else if (onComposeEndpointHit) {
+    service.get('/.well-known/graphql-composition', async function (req, reply) {
+      onComposeEndpointHit()
+      reply.code(404)
+      return { error: 'not found' }
     })
   }
 
