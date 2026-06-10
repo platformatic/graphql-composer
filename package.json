@@ -4,6 +4,10 @@
   "description": "GraphQL API Composer",
   "license": "Apache-2.0",
   "main": "lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/platformatic/graphql-composer.git"
+  },
   "scripts": {
     "test": "npm run lint && borp --coverage",
     "lint": "standard | snazzy",
@@ -21,6 +25,7 @@
   "devDependencies": {
     "borp": "^0.21.0",
     "dedent": "^1.5.1",
+    "semver": "^7.7.2",
     "snazzy": "^9.0.0",
     "standard": "^17.1.0"
   }
