@@ -1,25 +1,35 @@
-name: graphql-composer CI
+---
+name: Run Tests
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
+  ci:
     strategy:
       matrix:
-        node-version: [20.x, 22.x]
+        node-version: [20.x, 22.x, 24.x, 26.x]
         os: [ubuntu-latest, windows-latest]
+    name: "Node.js ${{ matrix.node-version }}"
+    runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v5
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v6
-      with:
-        node-version: ${{ matrix.node-version }}
-        check-latest: true
-    - run: npm install
-    - run: npm test
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use supported Node.js Version
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Restore cached dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ matrix.node-version }}-${{ hashFiles('package-lock.json', 'package.json') }}
+      - name: Install dependencies
+        run: npm install
+      - name: Run Tests
+        run: npm test
