@@ -45,4 +45,6 @@ jobs:
       - name: Publish to npm
         run: npm publish --access public --tag ${{ inputs.prerelease == true && 'next' || 'latest' }} --provenance
       - name: Create release notes
-        run: npx @matteo.collina/release-notes -a ${{ secrets.GH_RELEASE_TOKEN }} -t v${{ inputs.version }} -r graphql-composer -o platformatic ${{ github.event.inputs.prerelease == 'true' && '-p' || '' }} -c ${{ github.ref }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: npx @matteo.collina/release-notes -t v${{ inputs.version }} -r graphql-composer -o platformatic ${{ github.event.inputs.prerelease == 'true' && '-p' || '' }} -c ${{ github.ref }}
