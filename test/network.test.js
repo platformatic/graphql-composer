@@ -96,6 +96,43 @@ test('should not repeatedly probe composeEndpoint in the same composer instance 
   assert.strictEqual(composeEndpointHits, 1)
 })
 
+test('should not repeatedly probe composeEndpoint across compose() calls when an injectable cache is provided', async (t) => {
+  const expectedSdl = gql.schema
+  let composeEndpointHits = 0
+
+  const [service] = await createGraphqlServices(t,
+    [{
+      mercurius: { ...gql },
+      exposeIntrospection: false,
+      onComposeEndpointHit: () => { composeEndpointHits++ },
+      listen: true
+    }]
+  )
+
+  const composeEndpointMissCache = new Map()
+
+  let errors = 0
+  const composer1 = await compose({
+    onSubgraphError: () => { errors++ },
+    subgraphs: [{ server: { host: service.host } }],
+    composeEndpointMissCache
+  })
+
+  assert.strictEqual(errors, 0)
+  assert.strictEqual(composeEndpointHits, 1)
+  assert.strictEqual(composer1.toSdl(), expectedSdl)
+
+  const composer2 = await compose({
+    onSubgraphError: () => { errors++ },
+    subgraphs: [{ server: { host: service.host } }],
+    composeEndpointMissCache
+  })
+
+  assert.strictEqual(errors, 0)
+  assert.strictEqual(composeEndpointHits, 1)
+  assert.strictEqual(composer2.toSdl(), expectedSdl)
+})
+
 test('should get error when is not possible to get the schema from a subgraph neither from composeEndpoint and using introspection query', async (t) => {
   const [service] = await createGraphqlServices(t,
     [{
