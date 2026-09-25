@@ -174,6 +174,48 @@ async function main () {
 main()
 ```
 
+## Same-named types across subgraphs
+
+Subgraphs may publish types with the same name. They are merged as follows:
+
+- an **enum** becomes the union of the values declared by every subgraph, each value keeping the description of the subgraph that declared it
+- an **object type** becomes the union of the fields by name; the first declaration of a field wins
+- any other type keeps the first declaration
+
+A `Query` or `Mutation` field published by more than one subgraph is **routed by an enum argument**. The argument must be declared with the same enum type in every subgraph, as `Enum` or `Enum!`, and every value must be declared by exactly one subgraph. The value a client passes selects the subgraph that receives the call.
+
+Given a `Books` subgraph:
+
+```graphql
+enum IndexedEntity { BOOK }
+type IndexResult { indexed: Int! }
+type Mutation { reindex(entity: IndexedEntity!): IndexResult! }
+```
+
+and a `Reviews` subgraph:
+
+```graphql
+enum IndexedEntity { REVIEW AUTHOR }
+type IndexResult { indexed: Int! }
+type Mutation { reindex(entity: IndexedEntity!): IndexResult! }
+```
+
+the composed schema is:
+
+```graphql
+enum IndexedEntity { BOOK REVIEW AUTHOR }
+type IndexResult { indexed: Int! }
+type Mutation { reindex(entity: IndexedEntity!): IndexResult! }
+```
+
+`reindex(entity: BOOK)` is sent to `Books`, `reindex(entity: AUTHOR)` to `Reviews`, and a value outside the enum is rejected by the composed schema before any subgraph is called.
+
+Composition fails, rather than picking a subgraph silently, when a shared root field cannot be routed:
+
+- no argument is an enum with a distinct set of values per subgraph, for example two subgraphs both publishing `Query.status: String`
+- a value is declared by more than one subgraph
+- more than one enum argument could route the field
+
 ## API
 
 ### `compose(config)`
