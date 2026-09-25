@@ -63,11 +63,31 @@ test.describe('onConflict option', () => {
     await assert.rejects(compose({ onConflict: 'merge' }), /onConflict must be one of "first", "last", "route", "error"/)
   })
 
-  test('should fail to compose a shared root field by default', async (t) => {
+  // unset keeps what the composer did before the option: the first subgraph's enum values, the
+  // last subgraph's resolver, and now a warning that names the field
+  test('should keep the previous merge when the option is not set, with a warning', async (t) => {
+    const calls = { books: [], reviews: [] }
+    const lines = []
+    const options = await composeOptions(t, [
+      indexingSubgraph('books', ['BOOK'], calls.books),
+      indexingSubgraph('reviews', ['REVIEW'], calls.reviews)
+    ], { logger: collectingLogger(lines) })
+    const { composer, service } = await createComposerService(t, { compose, options })
+
+    assert.match(composer.toSdl(), /enum IndexedEntity \{\n {2}"""books"""\n {2}BOOK\n\}/)
+    const warning = lines.find(line => line.level === 'warn')
+    assert.match(warning.args[1], /Mutation\.reindex is published by subgraphs books, reviews: resolved by the last subgraph, set onConflict to choose how/)
+
+    const { errors } = await rawRequest(service, 'mutation { reindex(entity: BOOK) { indexed } }')
+    assert.match(errors[0].message, /"BOOK" does not exist in "IndexedEntity" enum/)
+    assert.deepStrictEqual(calls, { books: [], reviews: [] })
+  })
+
+  test('"error" should fail to compose a shared root field', async (t) => {
     const options = await composeOptions(t, [
       indexingSubgraph('books', ['BOOK'], []),
       indexingSubgraph('reviews', ['REVIEW'], [])
-    ])
+    ], { onConflict: 'error' })
 
     await assert.rejects(compose(options),
       /Cannot compose Mutation\.reindex is published by subgraphs books, reviews: set onConflict to "route", "first" or "last" to resolve it/)
@@ -356,6 +376,13 @@ test.describe('same-named object types', () => {
       resolvers: { Query: { [`${owner}Pizza`]: () => null } }
     },
     listen: true
+  })
+
+  test('should keep the previous merge when the option is not set: the last declaration of a shared field wins', async (t) => {
+    const options = await composeOptions(t, [pizza('a', 'ID', 'name: String'), pizza('b', 'Int!', 'size: Int')])
+    const composer = await compose(options)
+
+    assert.match(composer.toSdl(), /type Pizza \{\n {2}id: Int!\n {2}name: String\n {2}size: Int\n\}/)
   })
 
   for (const [strategy, id] of [['first', 'ID'], ['route', 'ID'], ['error', 'ID'], ['last', 'Int!']]) {

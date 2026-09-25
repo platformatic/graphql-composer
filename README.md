@@ -180,12 +180,15 @@ Subgraphs may publish types and root fields with the same name. The `onConflict`
 
 | `onConflict` | same-named enum | field both declare on a same-named object type | shared `Query` / `Mutation` field |
 | --- | --- | --- | --- |
-| `'error'` (default) | union of the values | first declaration | composition fails, naming the field and the subgraphs |
+| unset (default) | first subgraph's values | last declaration | last subgraph's resolver, with a warning |
+| `'error'` | union of the values | first declaration | composition fails, naming the field and the subgraphs |
 | `'first'` | first subgraph's values | first declaration | first subgraph's resolver, with a warning |
 | `'last'` | last subgraph's values | last declaration | last subgraph's resolver, with a warning |
 | `'route'` | union of the values | first declaration | routed to one subgraph by an enum argument |
 
 "First" and "last" follow the order of `subgraphs`. A merged enum value keeps the description of the subgraph that declared it.
+
+The default keeps the merge as it was before the option existed. Note that it is inconsistent: a shared enum keeps the first subgraph's values while a shared root field is answered by the last subgraph, so a call can validate against one subgraph and run against another. Set `onConflict` to choose a consistent strategy; the default will change in a future major version.
 
 ### Routing a shared root field
 
@@ -264,7 +267,7 @@ Composition fails, rather than picking a subgraph silently, when a shared root f
       - `onSubgraphError` (function, optional) - Hook called when an error occurs getting schema from a subgraph. The default function will throw the error. The arguments are:
           - `error` (error) - The error.
           - `subgraph` (string) - The erroring subgraph name.
-      - `onConflict` (string, optional) - How a type or root field that more than one subgraph publishes is merged: `'error'`, `'first'`, `'last'` or `'route'`, see [same-named types across subgraphs](#same-named-types-across-subgraphs). **Default:** `'error'`.
+      - `onConflict` (string, optional) - How a type or root field that more than one subgraph publishes is merged: `'error'`, `'first'`, `'last'` or `'route'`, see [same-named types across subgraphs](#same-named-types-across-subgraphs). **Default:** unset, which keeps the merge as it was before the option existed.
       - `queryTypeName` (string, optional) - The name of the `Query` type in the composed schema. **Default:** `'Query'`.
       - `mutationTypeName` (string, optional) - The name of the `Mutation` type in the composed schema. **Default:** `'Mutation'`.
 
