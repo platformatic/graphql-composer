@@ -7,9 +7,9 @@ const { createGraphqlServices, createComposerService, graphqlRequest } = require
 const { compose } = require('../')
 
 // Two subgraphs publish the same Mutation field with the same enum argument, each declaring its
-// own values. How the composer resolves that is the `onConflict` option: "error" (the default)
-// refuses, "first" and "last" pick a subgraph, "route" merges the enum and sends each call to the
-// subgraph that declares the value the client passed.
+// own values. How the composer resolves that is the `onConflict` option: unset (the default) warns
+// and takes the last subgraph's resolver, "error" refuses, "first" and "last" pick a subgraph,
+// "route" merges the enum and sends each call to the subgraph that declares the value passed.
 function indexingSubgraph (owner, entities, calls, { field = 'reindex(entity: IndexedEntity!): IndexResult!', result = 'type IndexResult { indexed: Int! }' } = {}) {
   const values = entities.map(entity => `"""${owner}""" ${entity}`).join(' ')
   return {
@@ -63,9 +63,9 @@ test.describe('onConflict option', () => {
     await assert.rejects(compose({ onConflict: 'merge' }), /onConflict must be one of "first", "last", "route", "error"/)
   })
 
-  // unset keeps what the composer did before the option: the first subgraph's enum values, the
-  // last subgraph's resolver, and now a warning that names the field
-  test('should keep the previous merge when the option is not set, with a warning', async (t) => {
+  // unset: the first subgraph's enum values, the last subgraph's resolver, and a warning that
+  // names the field
+  test('should take the first enum and the last resolver when the option is not set, with a warning', async (t) => {
     const calls = { books: [], reviews: [] }
     const lines = []
     const options = await composeOptions(t, [
@@ -378,7 +378,7 @@ test.describe('same-named object types', () => {
     listen: true
   })
 
-  test('should keep the previous merge when the option is not set: the last declaration of a shared field wins', async (t) => {
+  test('should publish each field once, the last declaration of a shared one, when the option is not set', async (t) => {
     const options = await composeOptions(t, [pizza('a', 'ID', 'name: String'), pizza('b', 'Int!', 'size: Int')])
     const composer = await compose(options)
 

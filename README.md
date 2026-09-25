@@ -188,7 +188,7 @@ Subgraphs may publish types and root fields with the same name. The `onConflict`
 
 "First" and "last" follow the order of `subgraphs`. A merged enum value keeps the description of the subgraph that declared it.
 
-The default keeps the merge as it was before the option existed. Note that it is inconsistent: a shared enum keeps the first subgraph's values while a shared root field is answered by the last subgraph, so a call can validate against one subgraph and run against another. Set `onConflict` to choose a consistent strategy; the default will change in a future major version.
+With the option unset, a shared enum keeps the first subgraph's values while a shared root field is answered by the last subgraph, so a call can validate against one subgraph and run against another. Set `onConflict` to choose a consistent strategy; the default will change in a future major version.
 
 ### Routing a shared root field
 
@@ -267,7 +267,7 @@ Composition fails, rather than picking a subgraph silently, when a shared root f
       - `onSubgraphError` (function, optional) - Hook called when an error occurs getting schema from a subgraph. The default function will throw the error. The arguments are:
           - `error` (error) - The error.
           - `subgraph` (string) - The erroring subgraph name.
-      - `onConflict` (string, optional) - How a type or root field that more than one subgraph publishes is merged: `'error'`, `'first'`, `'last'` or `'route'`, see [same-named types across subgraphs](#same-named-types-across-subgraphs). **Default:** unset, which keeps the merge as it was before the option existed.
+      - `onConflict` (string, optional) - How a type or root field that more than one subgraph publishes is merged: `'error'`, `'first'`, `'last'` or `'route'`, see [same-named types across subgraphs](#same-named-types-across-subgraphs). **Default:** unset: the first subgraph's values for a shared enum and the last subgraph's resolver for a shared root field, with a warning.
       - `queryTypeName` (string, optional) - The name of the `Query` type in the composed schema. **Default:** `'Query'`.
       - `mutationTypeName` (string, optional) - The name of the `Mutation` type in the composed schema. **Default:** `'Mutation'`.
 
