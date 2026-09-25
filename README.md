@@ -176,13 +176,20 @@ main()
 
 ## Same-named types across subgraphs
 
-Subgraphs may publish types with the same name. They are merged as follows:
+Subgraphs may publish types and root fields with the same name. The `onConflict` option decides how they are merged:
 
-- an **enum** becomes the union of the values declared by every subgraph, each value keeping the description of the subgraph that declared it
-- an **object type** becomes the union of the fields by name; the first declaration of a field wins
-- any other type keeps the first declaration
+| `onConflict` | same-named enum | field both declare on a same-named object type | shared `Query` / `Mutation` field |
+| --- | --- | --- | --- |
+| `'error'` (default) | union of the values | first declaration | composition fails, naming the field and the subgraphs |
+| `'first'` | first subgraph's values | first declaration | first subgraph's resolver, with a warning |
+| `'last'` | last subgraph's values | last declaration | last subgraph's resolver, with a warning |
+| `'route'` | union of the values | first declaration | routed to one subgraph by an enum argument |
 
-A `Query` or `Mutation` field published by more than one subgraph is **routed by an enum argument**. The argument must be declared with the same enum type in every subgraph, as `Enum` or `Enum!`, and every value must be declared by exactly one subgraph. The value a client passes selects the subgraph that receives the call.
+"First" and "last" follow the order of `subgraphs`. A merged enum value keeps the description of the subgraph that declared it.
+
+### Routing a shared root field
+
+With `onConflict: 'route'`, a `Query` or `Mutation` field published by more than one subgraph is routed by one of its arguments. Every subgraph must declare the field with the same return type and the same argument types, and one argument must be an enum, declared as `Enum!` or with a default value, whose values are declared by exactly one subgraph each. The value a client passes selects the subgraph that receives the call.
 
 Given a `Books` subgraph:
 
@@ -212,9 +219,11 @@ type Mutation { reindex(entity: IndexedEntity!): IndexResult! }
 
 Composition fails, rather than picking a subgraph silently, when a shared root field cannot be routed:
 
-- no argument is an enum with a distinct set of values per subgraph, for example two subgraphs both publishing `Query.status: String`
+- the subgraphs disagree on the return type or on an argument's type, or on the default of any argument other than the routing one
+- no argument is an enum with a distinct set of values per subgraph; a nullable enum argument without a default does not qualify, since a client may leave it out
 - a value is declared by more than one subgraph
 - more than one enum argument could route the field
+- a subgraph that does not publish the field adds values to the enum, since such a value would pass validation with nowhere to go
 
 ## API
 
@@ -255,6 +264,7 @@ Composition fails, rather than picking a subgraph silently, when a shared root f
       - `onSubgraphError` (function, optional) - Hook called when an error occurs getting schema from a subgraph. The default function will throw the error. The arguments are:
           - `error` (error) - The error.
           - `subgraph` (string) - The erroring subgraph name.
+      - `onConflict` (string, optional) - How a type or root field that more than one subgraph publishes is merged: `'error'`, `'first'`, `'last'` or `'route'`, see [same-named types across subgraphs](#same-named-types-across-subgraphs). **Default:** `'error'`.
       - `queryTypeName` (string, optional) - The name of the `Query` type in the composed schema. **Default:** `'Query'`.
       - `mutationTypeName` (string, optional) - The name of the `Mutation` type in the composed schema. **Default:** `'Mutation'`.
 
