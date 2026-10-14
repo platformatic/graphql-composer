@@ -2,7 +2,7 @@
 
 The GraphQL API Composer is a framework agnostic library for combining multiple GraphQL APIs, known as subgraphs, into a single API capable of querying data across any of its constituent subgraphs.
 
-The Composer downloads each subgraph schema from the corresponding upstream servers. The subgraphs will be merged to create a supergraph API. The combined API exposes the original operations from each subgraph. Furthermore, types with the same name in multiple subgraphs are merged together into entities. 
+The Composer downloads each subgraph schema from the corresponding upstream servers, or takes it from the SDL provided for the subgraph. The subgraphs will be merged to create a supergraph API. The combined API exposes the original operations from each subgraph. Furthermore, types with the same name in multiple subgraphs are merged together into entities.
 
 ## Getting Started
 
@@ -189,6 +189,7 @@ main()
           - `host` (string, required) - The host information to connect to.
           - `composeEndpoint` (string, optional) - The endpoint to retrieve the introspection query from. **Default:** `'/.well-known/graphql-composition'`. In case the endpoint is not available, a second call with introspection query will be sent to the `graphqlEndpoint`.
           - `graphqlEndpoint` (string, optional) - The endpoint to make GraphQL queries against. **Default:** `'/graphql'`.
+        - `sdl` (string, optional) - The schema of the subgraph, as SDL. When provided, the Composer uses it instead of retrieving the schema from the subgraph server, so composing does not need the subgraph to be reachable and `composeEndpoint` is not used; queries are still sent to `server.host` and `server.graphqlEndpoint`. The SDL must be a complete, valid schema, for example the output of `printSchema()` of the subgraph schema. See [subgraph schema from SDL](#subgraph-schema-from-sdl).
         - `entities` (object, optional) - Configuration object for working with entities in this subgraph, the values are objects with the the following schema:
           - `resolver` (object, optional) - The resolver to retrieve a list of objects - should return a list - and should accept as a arguments a list of primary keys or foreign keys.
             - `name` (string, required) - The name of the resolver.
@@ -220,6 +221,33 @@ main()
     - A `Promise` that resolves with a `Composer` instance.
 
 When this function is called, all of the subgraph schemas are retrieved and merged into a supergraph. A `Promise` resolving to a `Composer` instance is returned.
+
+### Subgraph schema from SDL
+
+By default, the Composer retrieves the schema of each subgraph from its server when composing: it requests the `composeEndpoint` and, if that is not available, sends the introspection query to the `graphqlEndpoint`. A subgraph can provide its schema instead, as SDL, for example from a file published along with the subgraph:
+
+```js
+const { readFile } = require('node:fs/promises')
+const { compose } = require('@platformatic/graphql-composer')
+
+const composer = await compose({
+  subgraphs: [
+    {
+      name: 'books',
+      // queries are still sent to the server
+      server: { host: 'http://books.example.com', graphqlEndpoint: '/graphql' },
+      // the schema is not fetched from the server
+      sdl: await readFile('./schemas/books.graphql', 'utf8')
+    },
+    {
+      name: 'reviews',
+      server: { host: 'http://reviews.example.com' }
+    }
+  ]
+})
+```
+
+The subgraph does not need to be running while composing; a query fails only when it is sent to a subgraph that is not reachable. Entities are configured in the same way for a subgraph whose schema comes from SDL. If the SDL is not valid, the error is passed to `onSubgraphError`, as when the schema can not be retrieved from the subgraph server.
 
 ### `Composer` class
 
