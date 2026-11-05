@@ -282,6 +282,31 @@ test('should run a query with headers', async (t) => {
   assert.deepStrictEqual(result, expectedResult)
 })
 
+test('should resolve variables when mercurius jit is enabled', async (t) => {
+  const query = 'query GetBookById($id: ID!) { getBook(id: $id) { id genre } }'
+
+  const services = await createGraphqlServices(t, [
+    {
+      name: 'books-subgraph',
+      file: path.join(__dirname, 'fixtures/books.js'),
+      listen: true
+    }
+  ])
+  const options = {
+    subgraphs: services.map((service) => ({
+      name: service.name,
+      server: { host: service.host }
+    }))
+  }
+
+  const { service } = await createComposerService(t, { compose, options, mercurius: { jit: 1 } })
+
+  // the first request runs through graphql-js, the next ones through graphql-jit
+  assert.deepStrictEqual(await graphqlRequest(service, query, { id: 1 }), { getBook: { id: '1', genre: 'FICTION' } })
+  assert.deepStrictEqual(await graphqlRequest(service, query, { id: 2 }), { getBook: { id: '2', genre: 'NONFICTION' } })
+  assert.deepStrictEqual(await graphqlRequest(service, query, { id: 1 }), { getBook: { id: '1', genre: 'FICTION' } })
+})
+
 test('query capabilities', async (t) => {
   const capabilities = [
     {

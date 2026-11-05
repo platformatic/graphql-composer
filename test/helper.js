@@ -7,7 +7,7 @@ const Mercurius = require('mercurius')
 
 const introspectionQuery = getIntrospectionQuery()
 
-async function createComposerService (t, { compose, options }) {
+async function createComposerService (t, { compose, options, mercurius }) {
   const composer = await compose(options)
   const service = Fastify()
   t.after(async () => { try { await service.close() } catch { } })
@@ -15,7 +15,8 @@ async function createComposerService (t, { compose, options }) {
   service.register(Mercurius, {
     schema: composer.toSdl(),
     resolvers: composer.getResolvers(),
-    graphiql: true
+    graphiql: true,
+    ...mercurius
   })
 
   return { composer, service }
