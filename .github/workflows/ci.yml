@@ -11,10 +11,12 @@ on:
 jobs:
   ci:
     strategy:
+      fail-fast: false
       matrix:
         node-version: [20.x, 22.x, 24.x, 26.x]
         os: [ubuntu-latest, windows-latest]
-    name: "Node.js ${{ matrix.node-version }}"
+        graphql-version: [16, 17]
+    name: "Node.js ${{ matrix.node-version }} - graphql ${{ matrix.graphql-version }}"
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -31,5 +33,7 @@ jobs:
           key: npm-${{ runner.os }}-${{ matrix.node-version }}-${{ hashFiles('package-lock.json', 'package.json') }}
       - name: Install dependencies
         run: npm install
+      - name: Install graphql ${{ matrix.graphql-version }}
+        run: npm install --no-save graphql@${{ matrix.graphql-version }}
       - name: Run Tests
         run: npm test
