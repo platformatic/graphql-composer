@@ -59,7 +59,7 @@ const resolvers = {
   }
 }
 
-async function setup (t) {
+async function setup (t, mercurius) {
   const services = await createGraphqlServices(t, [{
     name: 'artists-subgraph',
     mercurius: { schema, resolvers },
@@ -73,7 +73,7 @@ async function setup (t) {
     }))
   }
 
-  const { service } = await createComposerService(t, { compose, options })
+  const { service } = await createComposerService(t, { compose, options, mercurius })
   return service
 }
 
@@ -127,6 +127,25 @@ test('should pass variables inside an object argument of a nested field to the s
       { id: '201', tags: [] }
     ]
   })
+})
+
+test('should pass variables and defaults inside a list argument of a nested field to the subgraph', async (t) => {
+  const service = await setup(t, { jit: 1 })
+  const query = `query ($sources: String!, $coerced: Int!, $direction: OrderDirection = ASC) {
+    artists { id tags(orderBy: [{ field: $sources, direction: $direction }], limit: $coerced) { id } }
+  }`
+  const expected = {
+    artists: [
+      { id: '101', tags: [{ id: '3' }] },
+      { id: '102', tags: [{ id: '2' }] },
+      { id: '201', tags: [] }
+    ]
+  }
+
+  // Exercise both graphql-js and graphql-jit, whose variable maps have different shapes.
+  for (let i = 0; i < 3; i++) {
+    assert.deepStrictEqual(await graphqlRequest(service, query, { sources: 'score', coerced: 1 }), expected)
+  }
 })
 
 test('should pass an object variable as argument of a nested field to the subgraph', async (t) => {

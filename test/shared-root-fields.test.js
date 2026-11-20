@@ -3,6 +3,7 @@
 const assert = require('node:assert')
 const { test } = require('node:test')
 const dedent = require('dedent')
+const pino = require('pino')
 const { createGraphqlServices, createComposerService, graphqlRequest } = require('./helper')
 const { compose } = require('../')
 
@@ -44,8 +45,11 @@ async function composeOptions (t, configs, options = {}) {
 }
 
 function collectingLogger (lines) {
-  const push = level => (...args) => lines.push({ level, args })
-  return { fatal: push('fatal'), error: push('error'), warn: push('warn'), info: push('info'), debug: push('debug'), trace: push('trace'), child () { return this } }
+  return pino({ level: 'warn' }, {
+    write (line) {
+      lines.push(JSON.parse(line))
+    }
+  })
 }
 
 async function rawRequest (service, query, variables) {
@@ -75,8 +79,8 @@ test.describe('onConflict option', () => {
     const { composer, service } = await createComposerService(t, { compose, options })
 
     assert.match(composer.toSdl(), /enum IndexedEntity \{\n {2}"""books"""\n {2}BOOK\n\}/)
-    const warning = lines.find(line => line.level === 'warn')
-    assert.match(warning.args[1], /Mutation\.reindex is published by subgraphs books, reviews: resolved by the last subgraph, set onConflict to choose how/)
+    const warning = lines.find(line => line.level === pino.levels.values.warn)
+    assert.match(warning.msg, /Mutation\.reindex is published by subgraphs books, reviews: resolved by the last subgraph, set onConflict to choose how/)
 
     const { errors } = await rawRequest(service, 'mutation { reindex(entity: BOOK) { indexed } }')
     assert.match(errors[0].message, /"BOOK" does not exist in "IndexedEntity" enum/)
@@ -108,8 +112,8 @@ test.describe('onConflict option', () => {
       for (const value of values) { assert.match(sdl, new RegExp(`\\n {2}${value}\\n`)) }
       assert.strictEqual(sdl.match(/reindex\(/g).length, 1)
 
-      const warning = lines.find(line => line.level === 'warn')
-      assert.match(warning.args[1], new RegExp(`Mutation\\.reindex is published by subgraphs books, reviews: resolved by subgraph ${winner} \\(onConflict: ${strategy}\\)`))
+      const warning = lines.find(line => line.level === pino.levels.values.warn)
+      assert.match(warning.msg, new RegExp(`Mutation\\.reindex is published by subgraphs books, reviews: resolved by subgraph ${winner} \\(onConflict: ${strategy}\\)`))
 
       await graphqlRequest(service, `mutation { reindex(entity: ${values[0]}) { indexed } }`)
       assert.deepStrictEqual(calls[winner], [values[0]])
